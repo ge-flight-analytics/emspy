@@ -3,7 +3,7 @@ A Python Wrapper of EMS API. There is also a R wrapper for EMS API. If you are i
 
 Any contribution is welcome!
 
-Dependency: httr, jsonlite
+Dependency: numpy, pandas, networkx
 
 
 ## Make an EMS API Connection
