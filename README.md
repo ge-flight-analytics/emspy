@@ -1,23 +1,25 @@
 # emsPy
-A Python Wrapper of EMS API
+A Python Wrapper of EMS API. There is also a R wrapper for EMS API. If you are interest in the R version, please visit <https://github.build.ge.com/212401522/Rems>. The goal of this project is provide a way to bring EMS data in Python environment via the EMS's RESTful API. The project is still in an early alpha stage, so is not guarranteed working reliably nor well documented. I'll beef up the documentation as soon as possible.
+
+Any contribution is welcome!
+
+Dependency: httr, jsonlite
 
 
 ## Make an EMS API Connection
 
 The optional proxy setting can be passed to the EMS connection object with the following format:
+```python
 proxies = {
     'http': 'http://{prxy_usrname}:{prxy_password}@{proxy_server_address}:{port},
-    'https': 'https:....'
+    'https': 'https://{prxy_usrname}:{prxy_password}@{proxy_server_address}:{port}'
 }
-
+```
 
 ```python
 from pems import Connection
 
-# Contains my proxy info
-import mysetting
-
-c = Connection('kyungjin.moon',mysetting.pwd, proxies = mysetting.proxies)
+c = Connection('kyungjin.moon',mysetting.pwd, proxies = proxies)
 
 ```
 
@@ -83,10 +85,10 @@ query.order_by("flight date")
 
 ### Filtering
 Currently the following conditional operators are supported with respect to the data field types:
-    - Number: "==", "!=", "<", "<=", ">", ">="
-    - Discrete: "==", "!=", "in", "not in" (Filtering condition made with value, not discrete integer key)
-    - Boolean: "==", "!="
-    - String: "==", "!=", "in", "not in"
+- Number: "==", "!=", "<", "<=", ">", ">="
+- Discrete: "==", "!=", "in", "not in" (Filtering condition made with value, not discrete integer key)
+- Boolean: "==", "!="
+- String: "==", "!=", "in", "not in"
 
 Following is the example:
 
@@ -100,11 +102,11 @@ query.filter("'takeoff airport iata code' == 'KUL'")
 ```
 
 The current filter method has the following limitation:
-    - Single filtering condition for each filter method call
-    - Each filtering condition is combined only by "AND" relationship
-    - The field keyword must be at left-hand side of a conditional expression
-    - No support of NULL value filtering, which is being worked on now
-    - The datetime condition should be only with the ISO8601 format
+- Single filtering condition for each filter method call
+- Each filtering condition is combined only by "AND" relationship
+- The field keyword must be at left-hand side of a conditional expression
+- No support of NULL value filtering, which is being worked on now
+- The datetime condition should be only with the ISO8601 format
 
 ### ETC.
 You can pass additional attributes supported by EMS query:
@@ -198,5 +200,6 @@ df = query.run()
 
 from IPython.display import display
 display(df)
+# This will return your data in Pandas dataframe format
 ```
 
