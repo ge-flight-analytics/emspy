@@ -13,7 +13,7 @@ Right now, I've not yet packed this into an installation package. Just download 
 The optional proxy setting can be passed to the EMS connection object with the following format:
 ```python
 proxies = {
-    'http': 'http://{prxy_usrname}:{prxy_password}@{proxy_server_address}:{port},
+    'http': 'http://{prxy_usrname}:{prxy_password}@{proxy_server_address}:{port}',
     'https': 'https://{prxy_usrname}:{prxy_password}@{proxy_server_address}:{port}'
 }
 ```
@@ -21,7 +21,7 @@ proxies = {
 ```python
 from emspy import Connection
 
-c = Connection('kyungjin.moon',mysetting.pwd, proxies = proxies)
+c = Connection("efoqa_usrname", "efoqa_password", proxies = proxies)
 
 ```
 
