@@ -72,7 +72,7 @@ query.save_datatree()
 ```
 If you saved the data tree with default file location, the save data tree will be automatically reloaded when you intantiate a new Query object. 
 
-In case you want to save the data tree locally, specify your own choice of a file name with a proper path. For example, the following will save the data tree at your working directory.
+In case you want to save the data tree locally, you can call `save_datatreee` method and specify your own choice of a file name with a proper path. For example, the following will save the data tree at your working directory.
 ```python
 query.save_datatree('my_datatree.cpk')
 ```
