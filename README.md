@@ -19,7 +19,7 @@ proxies = {
 ```
 
 ```python
-from pems import Connection
+from emspy import Connection
 
 c = Connection('kyungjin.moon',mysetting.pwd, proxies = proxies)
 
@@ -29,7 +29,7 @@ c = Connection('kyungjin.moon',mysetting.pwd, proxies = proxies)
 
 
 ```python
-from pems.query import Query
+from emspy.query import Query
 
 query = Query(c, ems_name = 'ems9')
 ```
