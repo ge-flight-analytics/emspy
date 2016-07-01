@@ -70,6 +70,41 @@ You need to make a separate select call if you want to add a field with aggregat
 query.select("P22: Fuel Burned by all Engines during Cruise", aggregate="avg")
 ```
 
+### Datasource Setup
+
+The EMS system handles with data fields based on a hierarchical tree structure. This field tree manages mappings between names and field IDs as well as the field groups of fields. In order to send query via EMS API, the Rems package will automatically generate a data file for the static, frequently used part of the field tree and load it as default. This bare field tree includes fields of the following field groups:
+
+* Flight Information (sub-field groups Processing and Profile 16 Extra Data were excluded)
+* Aircraft Information
+* Flight Review
+* Data Information
+* Navigation Information
+* Weather Information
+
+In case that you want to query with fields that are not included in this default, stripped-down data tree, you'll have to add the field group where your fields belongs to and update your data field tree. For example, if you want to add a field group branch such as Profiles --> Standard Library Profiles --> Block-Cost Model --> P301: Block-Cost Model Planned Fuel Setup and Tests --> Measured Items --> Ground Operations (before takeoff), the execution of the following method will add the fields and their related subtree structure to the basic tree structure. You can use either the full name or just a fraction of consequtive keywords of each field group. The keyword is case insensitive.
+
+**Caution**: the process of adding a subtree usually requires a very large number of recursive RESTful API calls which takes quite a long time. Please try to specify the subtree to as low level as possible to avoid a long processing time.
+
+```python
+query.update_datatree("profiles", "standard", "block-cost", "p301", 
+                      "measured", "ground operations (before takeoff)")
+```
+You can save your data tree for later uses: 
+```python
+## This will replace the default data tree file with the new one and save 
+## at the package root/data
+query.save_datatree()
+```
+If you saved the data tree with default file location, the save data tree will be automatically reloaded when you intantiate a new Query object. 
+
+In case you want to save the data tree locally, specify your own choice of a file name with a proper path. For example, the following will save the data tree at your working directory.
+```python
+query.save_datatree('my_datatree.cpk')
+```
+If you saved the data tree in a local file, you will have to explicitly load the file to reuse the saved datatree.
+```python
+query.load_datatree('my_datatree.cpk')
+```
 ### Group by & Order by
 Similarly, you can pass the grouping and ordering condition:
 
@@ -120,10 +155,6 @@ query.distinct(True)
 
 # EMS allows max. 5000 of the rows for the output table. Default is 10. 
 query.get_top(5000)
-
-# This turns on or off the "display" format of the output. It is turned on as default
-query.readable_output(True)
-
 ```
 
 ### Viewing JSON Translation of Your Query
@@ -200,8 +231,6 @@ You can finally send the query to the EMS system and get the data. The output da
 ```python
 df = query.run()
 
-from IPython.display import display
-display(df)
 # This will return your data in Pandas dataframe format
 ```
 
