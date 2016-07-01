@@ -1,8 +1,8 @@
-from pems.query.ems import EMS
-from pems.query.fleet import Fleet
-from pems.query.aircraft import Aircraft
-from pems.query.airport import Airport
-from pems.query.flightphase import FlightPhase
-from pems.query.flight import Flight
-from pems.query.query import Query
+from emspy.query.ems import EMS
+from emspy.query.fleet import Fleet
+from emspy.query.aircraft import Aircraft
+from emspy.query.airport import Airport
+from emspy.query.flightphase import FlightPhase
+from emspy.query.flight import Flight
+from emspy.query.query import Query
 

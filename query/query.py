@@ -1,4 +1,4 @@
-from pems.query import * 
+from emspy.query import * 
 import pandas as pd
 import sys, json
 
@@ -45,7 +45,7 @@ class Query:
 			"orderBy": [],
 			"distinct": True,
 			"top": 10,
-			"format": "display"
+			"format": "none"
 		}
 
 
@@ -182,13 +182,13 @@ class Query:
 		self.__queryset['top'] = n
 
 
-	def readable_output(self, x=True):
+	# def readable_output(self, x=False):
 
-		if x: 
-			y = "display"
-		else:
-			y = "none"
-		self.__queryset['format'] = y
+	# 	if x: 
+	# 		y = "display"
+	# 	else:
+	# 		y = "none"
+	# 	self.__queryset['format'] = y
 
 
 	def in_json(self):
@@ -210,7 +210,7 @@ class Query:
 		resp_h, content = self._conn.request(	
 			rtype="POST", 
 			uri_keys=('data_src','query'),
-			uri_args=(self._ems_id, self.__flight.get_datasource()[1]['id']),
+			uri_args=(self._ems_id, self.__flight.get_datasource()['id']),
 			jsondata= self.__queryset
 			)	
 
@@ -221,30 +221,46 @@ class Query:
 		else:
 			raise ValueError("Requested an unknown output type.")
 
-		# col = [h['name'] for h in content['header']]
-		# val = content['rows']
-		# return pd.DataFrame(data=val, columns = col)
-
 
 	def __to_dataframe(self, json_output):
 
+		print("Raw JSON output to Pandas dataframe...")
 		col      = [h['name'] for h in json_output['header']]
 		coltypes = [c[1]['type'] for c in self.__columns]
+		col_id   = [c[1]['id'] for c in self.__columns]
 		val      = json_output['rows']
 
 		df = pd.DataFrame(data = val, columns = col)
 
 		is_readable_on = self.__queryset['format']
 
-		for cname, ctype in zip(col, coltypes):
-			if ctype=='number':
-				df[cname] = pd.to_numeric(df[cname])
-			elif ctype=='discrete' and not is_readable_on:
-				df[cname] = pd.to_numeric(df[cname])
-			elif ctype=='dateTime':
-				df[cname] = pd.to_datetime(df[cname])
-
+		for cid, cname, ctype in zip(col_id, col, coltypes):
+			try:
+				if ctype=='number':				
+					df[cname] = pd.to_numeric(df[cname])
+				elif ctype=='discrete':
+					k_map = self.__flight.list_allvalues(field_id = cid, in_dict = True)
+					df[cname] = df[cname].astype(str)
+					df = df.replace({cname: k_map})
+				elif ctype=='boolean':
+					df[cname] = df[cname].astype(bool)
+				elif ctype=='dateTime':
+					df[cname] = pd.to_datetime(df[cname])
+			except ValueError:
+				pass
 		return df
+
+
+	def update_datatree(self, *args):
+		self.__flight.update_tree(*args)
+
+
+	def save_datatree(self, file_name = None):
+		self.__flight.save_tree(file_name)
+
+
+	def load_datatree(self, file_name = None):
+		self.__flight.load_tree(file_name)
 
 
 
