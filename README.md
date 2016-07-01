@@ -44,31 +44,6 @@ Current limitations:
 
 ## Write Query
 
-### Select
-Let's first go with "select". You can select the EMS data fields by keywords of their names as long as the keyword searches a field. For example, the select method finds you the field "Flight Date (Exact)" by passing three different search approaches:
-- Search by a consecutive substring. The method returns a match with the shortest field name if there are multiple match.
-    - Ex) "flight date"
-- Search by exact name. 
-    - Ex) "flight date (exact)"
-- Field name keyword along with multiple keywords for the names of upstream field groups. 
-    - Ex) ("flight info", "date (exact)")
-
-The keyword is case-insensitive.
-
-
-```python
-query.select("flight date", 
-             "customer id", 
-             "takeoff valid", 
-             "takeoff airport iata code")
-```
-
-You need to make a separate select call if you want to add a field with aggregation applied
-
-
-```python
-query.select("P22: Fuel Burned by all Engines during Cruise", aggregate="avg")
-```
 
 ### Datasource Setup
 
@@ -105,6 +80,33 @@ If you saved the data tree in a local file, you will have to explicitly load the
 ```python
 query.load_datatree('my_datatree.cpk')
 ```
+### Select
+Let's first go with "select". You can select the EMS data fields by keywords of their names as long as the keyword searches a field. For example, the select method finds you the field "Flight Date (Exact)" by passing three different search approaches:
+- Search by a consecutive substring. The method returns a match with the shortest field name if there are multiple match.
+    - Ex) "flight date"
+- Search by exact name. 
+    - Ex) "flight date (exact)"
+- Field name keyword along with multiple keywords for the names of upstream field groups. 
+    - Ex) ("flight info", "date (exact)")
+
+The keyword is case-insensitive.
+
+
+```python
+query.select("flight date", 
+             "customer id", 
+             "takeoff valid", 
+             "takeoff airport iata code")
+```
+
+You need to make a separate select call if you want to add a field with aggregation applied
+
+
+```python
+query.select("P301: duration from first indication of engines running to start", 
+             aggregate="avg")
+```
+
 ### Group by & Order by
 Similarly, you can pass the grouping and ordering condition:
 
