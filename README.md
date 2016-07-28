@@ -47,7 +47,7 @@ Current limitations:
 
 ### Datasource Setup
 
-The EMS system handles with data fields based on a hierarchical tree structure. This field tree manages mappings between names and field IDs as well as the field groups of fields. In order to send query via EMS API, the Rems package will automatically generate a data file for the static, frequently used part of the field tree and load it as default. This bare field tree includes fields of the following field groups:
+The EMS system handles with data fields based on a hierarchical tree structure. This field tree manages mappings between names and field IDs as well as the field groups of fields. In order to send query via EMS API, the emsPy package will automatically generate a data file for the static, frequently used part of the field tree and load it as default. This bare field tree includes fields of the following field groups:
 
 * Flight Information (sub-field groups Processing and Profile 16 Extra Data were excluded)
 * Aircraft Information
