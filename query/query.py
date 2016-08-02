@@ -206,13 +206,14 @@ class Query:
 		output type = ["raw", "dataframe"]
 		More types to add.
 		'''
-
+		print('Sending a query to EMS ...')
 		resp_h, content = self._conn.request(	
 			rtype="POST", 
 			uri_keys=('data_src','query'),
 			uri_args=(self._ems_id, self.__flight.get_datasource()['id']),
 			jsondata= self.__queryset
 			)	
+		print('Done.')
 
 		if output == "raw":
 			return content
@@ -232,23 +233,56 @@ class Query:
 
 		df = pd.DataFrame(data = val, columns = col)
 
-		is_readable_on = self.__queryset['format']
+		if self.__queryset['format'] == "display":
+			print("Done.")
+			return df
 
+		# Do the dirty work of casting a right type for each column of the data
+		# Note
+		# ====
+		# Runway IDs are discrete data but their key-value mapping is not provided
+		# because the mapping itself is quite big in size (45K entries). That means
+		# the regular routines to handle the discrete data won't work. As a result
+		# the discrete data routine has a dirty, custom routine particularly for
+		# the runway IDs. What it basically does is to send a separate but redundant
+		# query for runway IDs with "queryset$format = display", and then push the
+		# this query result at the runway ID column of the original query result.
+		# I know this is crappy but it seems the best way I could find.
 		for cid, cname, ctype in zip(col_id, col, coltypes):
 			try:
 				if ctype=='number':				
 					df[cname] = pd.to_numeric(df[cname])
 				elif ctype=='discrete':
 					k_map = self.__flight.list_allvalues(field_id = cid, in_dict = True)
-					df[cname] = df[cname].astype(str)
-					df = df.replace({cname: k_map})
+					if len(k_map) == 0:
+						df[cname] = self.__get_rwy_id(cname)
+					else:
+						df[cname] = df[cname].astype(str)
+						df = df.replace({cname: k_map})
 				elif ctype=='boolean':
 					df[cname] = df[cname].astype(bool)
 				elif ctype=='dateTime':
 					df[cname] = pd.to_datetime(df[cname])
 			except ValueError:
 				pass
+		print("Done.")
 		return df
+
+
+	def __get_rwy_id(self, cname):
+
+		print("\n --Running a special routine for querying runway IDs. This will make the querying twice longer.")
+		qs = self.__queryset
+		qs['format'] = "display"
+
+		resp_h, content = self._conn.request(
+			rtype="POST",
+			uri_keys=('data_src','query'),
+			uri_args=(self._ems_id, self.__flight.get_datasource()['id']),
+			jsondata= qs
+			)
+		return self.__to_dataframe(content)[cname]
+
 
 
 	def update_datatree(self, *args):
