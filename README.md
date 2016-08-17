@@ -25,27 +25,24 @@ c = Connection("efoqa_usrname", "efoqa_password", proxies = proxies)
 
 ```
 
-## Instantiate Query 
+## Fight Querying
+
+### Instantiate Query 
 
 
 ```python
-from emspy.query import Query
+from emspy.query import FltQuery
 
-query = Query(c, ems_name = 'ems9')
+query = FltQuery(c, ems_name = 'ems9')
 ```
 
 Current limitations:
 - The current query object only support the FDW Flight data source, which seems to be reasonable for POC functionality.
 - Right now a Query object can be instantiated only with a single EMS system connection. I think a Query object with multi-EMS connection could be quite useful for data analysts who want to do study pseudo-global patterns.
-    - Ex) query = Query(c, ems_name = ['ems9', 'ems10', 'ems11'])
-- It does not support querying time-series raw parameters yet. Adding this capability may be the next major goal. 
- 
+    - Ex) query = Query(c, ems_name = ['ems9', 'ems10', 'ems11']) 
 
 
-## Write Query
-
-
-### Datasource Setup
+### Database Setup
 
 The EMS system handles with data fields based on a hierarchical tree structure. This field tree manages mappings between names and field IDs as well as the field groups of fields. In order to send query via EMS API, the emsPy package will automatically generate a data file for the static, frequently used part of the field tree and load it as default. This bare field tree includes fields of the following field groups:
 
@@ -128,6 +125,7 @@ Currently the following conditional operators are supported with respect to the 
 - Discrete: "==", "!=", "in", "not in" (Filtering condition made with value, not discrete integer key)
 - Boolean: "==", "!="
 - String: "==", "!=", "in", "not in"
+- Datetime: ">=", "<"
 
 Following is the example:
 
@@ -225,7 +223,7 @@ pprint(query.in_dict())
      'top': 5000}
     
 
-## Run Query and Retrieve Data
+### Run Query and Retrieve Data
 You can finally send the query to the EMS system and get the data. The output data is returned in Pandas' DataFrame object.
 
 
@@ -236,3 +234,55 @@ df = query.run()
 # This will return your data in Pandas dataframe format
 ```
 
+## Querying Time-Series Data
+You can query data of time-series parameters with respect to individual flight records. Below is a simple example code that sends a flight query first in order to retrieve a set of flights and then sends of queries to get some of the time-series parameters for each of these flights.
+
+```python
+# Flight query with an APM profile. It will return data for 10 flights
+fq = FltQuery(c, "ems9")
+
+fq.load_datatree("stat_taxi_datatree.cpk")
+
+fq.select(
+  "customer id", "flight record", "airframe", "flight date (exact)",
+    "takeoff airport code", "takeoff airport icao code", "takeoff runway id",
+    "takeoff airport longitude", "takeoff airport latitude",
+    "p185: processed date", "p185: oooi pushback hour gmt",
+    "p185: oooi pushback hour solar local",
+    "p185: total fuel burned from first indication of engines running to start of takeoff (kg)")
+fq.order_by("flight record", order='desc')
+fq.get_top(10)
+fq.filter("'p185: processing state' == 'Succeeded'")
+flt = fq.run()
+
+# === Run time series query for flights ===
+
+tsq = TSeriesQuery(c, "ems9")
+tsq.select(
+  "baro-corrected altitude", 
+  "airspeed (calibrated; 1 or only)", 
+  "ground speed (best avail)",
+    "egt (left inbd eng)", 
+    "egt (right inbd eng)", 
+    "N1 (left inbd eng)", 
+    "N1 (right inbd eng)")
+
+# Run querying multiple flights at once
+res_dat = tsq.multi_run(flt, start = [0]*flt.shape[0], end = [15*60]*flt.shape[0])
+```
+
+The inputs to function `multi_run(...)` are:
+* flt  : a vector of Flight Records or flight data in Pandas DataFrame format. The dataframe should have a column of flight records with its column name "Flight Record"
+* start: a list-like object defining the starting times (secs) of the timepoints for individual flights. The vector length must be the same as the number of flight records
+* end  : a list-like object defining the end times (secs) of the timepoints for individual flights. The vector length must be the same as the number of flight records
+
+The output will be Python dictionary object which contains the following data:
+* flt_data : Dictionary. Copy of the flight data for each flight
+* ts_data  : Pandas DataFrame. the time series data for each flight
+
+In case you just want to query for a single flight, `run(...)` function will be better suited. Below is an example of time-series querying for a single flight.
+
+```python
+res_dat = run(1901112, start=0, end=900)
+```
+This function will return a Pandas DataFrame that contains timepoints from 0 to 900 secs and corresponding values for selected parameters.
