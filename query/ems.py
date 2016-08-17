@@ -11,7 +11,7 @@ class EMS(Asset):
 
 	def update_list(self):
 
-		Asset.update_list(self, uri_keys=('ems', 'list'))
+		Asset.update_list(self, uri_keys=('ems_sys', 'list'))
 
 
 

@@ -1,5 +1,5 @@
 import networkx as nx
-import os, re
+import os, sys, re
 import emspy
 
 class Flight:
@@ -9,7 +9,7 @@ class Flight:
                     'Operational Information (ODW2)','Profiles']
     save_file_fmt = os.path.join(emspy.__path__[0],"data","FDW_flt_data_tree_ems_id_%s.cpk")
 
-    def __init__(self, conn, ems_id):
+    def __init__(self, conn, ems_id, new_data = False):
 
         self._conn   = conn
         self._ems_id = ems_id
@@ -17,13 +17,13 @@ class Flight:
         self._fields = []
         self.__cntr  = 0
         
-        if self.__treefile_exists():
+        if self.__treefile_exists() and not new_data:
             self.load_tree()
         else:
             print("No file found for default data-field tree. Will start generating one...")
             self.generate_tree()
             print("done.")
-        self.__dsrc  = self.get_datasource()
+        self.__database  = self.get_database()
 
 
     def search_fields(self, *args, **kwargs):
@@ -81,11 +81,11 @@ class Flight:
         else:
             fld_id = field_id
 
-        dsrc_id = self.get_datasource()['id']
+        db_id = self.get_database()['id']
 
 
-        resp_h, content = self._conn.request( uri_keys=('data_src','field'),
-                                              uri_args=(self._ems_id, dsrc_id), 
+        resp_h, content = self._conn.request( uri_keys=('database','field'),
+                                              uri_args=(self._ems_id, db_id), 
                                               body = {'fieldId': fld_id})
         if in_dict:
             return content['discreteValues']
@@ -105,10 +105,10 @@ class Flight:
             raise ValueError("%s could not be found from the list of the field values." % value)
 
 
-    def get_datasource(self):
+    def get_database(self):
 
         for n in self._tree.nodes_iter():
-            if self._tree.node[n]['nodetype'] == 'data_source':
+            if self._tree.node[n]['nodetype'] == 'database':
                 return self._tree.node[n]
         return None
 
@@ -121,7 +121,7 @@ class Flight:
         
         # Find source id of FDW Flight and put it as root of tree
         resp_h, d = self._conn.request(
-            uri_keys = ('data_src','group'), 
+            uri_keys = ('database','group'), 
             uri_args = self._ems_id
             )
         for x in d['groups']:
@@ -129,20 +129,20 @@ class Flight:
                 fdw = x
                 break
         resp_h, d = self._conn.request(
-            uri_keys = ('data_src','group'),
+            uri_keys = ('database','group'),
             uri_args = self._ems_id,
-            body     = {'dataSourceGroupId': fdw['id']}
+            body     = {'groupId': fdw['id']}
             )
-        for x in d['dataSources']:
+        for x in d['databases']:
             if x['singularName'] == "FDW Flight":
                 fdw_flt             = x
                 fdw_flt['name']     = fdw_flt['singularName']
-                fdw_flt['nodetype'] = 'data_source'
+                fdw_flt['nodetype'] = 'database'
                 break
         self._tree.add_node(fdw_flt['id'], attr_dict=fdw_flt)
 
         # Cache the data source node reference just for convenience
-        self.__dsrc = self.get_datasource()
+        self.__database = self.get_database()
 
         # Add rest of the fields/groups recursively
         self.__add_subtree(fdw_flt)  
@@ -204,10 +204,10 @@ class Flight:
         print("On " + parent['name'] + "...")
         body = None
         if parent['nodetype'] == 'field_group':
-            body = {'fieldGroupId': parent['id']}
+            body = {'groupId': parent['id']}
 
-        resp_h, d = self._conn.request(uri_keys = ('data_src','field_group'),
-                                       uri_args = (self._ems_id, self.__dsrc['id']),
+        resp_h, d = self._conn.request(uri_keys = ('database','field_group'),
+                                       uri_args = (self._ems_id, self.__database['id']),
                                        body = body
                                        )
         if len(d['fields']) > 0:
@@ -249,10 +249,10 @@ class Flight:
         # field-group specific information.
         body = None
         if parent['nodetype'] == 'field_group':
-            body = {'fieldGroupId': parent['id']}
+            body = {'groupId': parent['id']}
 
-        resp_h, d = self._conn.request(uri_keys = ('data_src','field_group'),
-                                       uri_args = (self._ems_id, self.__dsrc['id']),
+        resp_h, d = self._conn.request(uri_keys = ('database','field_group'),
+                                       uri_args = (self._ems_id, self.__database['id']),
                                        body = body)
         # For the fields, simply remove and re-create the children fields as an update
         old_fld = [n for n in self._tree.successors(parent['id']) \

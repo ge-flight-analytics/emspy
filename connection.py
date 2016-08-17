@@ -51,7 +51,7 @@ class Connection:
 
 	def reconnect(self, verbose = False):
 
-		if self.__ntrials >= 10:
+		if self.__ntrials >= 3:
 			sys.exit("Stop trying to reconnect EMS API after %d trials" % self.__ntrials)
 
 		self.__ntrials +=1
@@ -91,13 +91,18 @@ class Connection:
 		req = urllib2.Request(uri, data=data, headers=headers)
 		try:
 			resp = urllib2.urlopen(req)
+			statcode = resp.getcode()
+			if statcode!=200:
+				print("Http status code: %d" % statcode)
+				verbose = True
 		except:
 			print("Tring to reconnect the EMS API.")
 			self.reconnect()
 			print("Done.")
-			resp = urllib2.urlopen(req)
-		resp_h  = resp.info().headers
-		content = json.loads(resp.read())
+			resp = urllib2.urlopen(req)			
+		resp_h   = resp.info().headers
+		content  = json.loads(resp.read())
+		
 
 		if verbose:
 			print("URL: %s" % resp.geturl())
