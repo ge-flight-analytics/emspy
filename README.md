@@ -45,7 +45,7 @@ Current limitations:
     - Ex) query = Query(c, ems_name = ['ems9', 'ems10', 'ems11']) 
 
 
-### Database Setup
+### EMS Database Setup
 
 The EMS system handles with data fields based on a hierarchical tree structure. This field tree manages mappings between names and field IDs as well as the field groups of fields. In order to send query via EMS API, the emsPy package will automatically generate a data file for the static, frequently used part of the field tree and load it as default. This bare field tree includes fields of the following field groups:
 
@@ -74,11 +74,11 @@ If you saved the data tree with default file location, the save data tree will b
 
 In case you want to save the data tree locally, you can call `save_datatreee` method and specify your own choice of a file name with a proper path. For example, the following will save the data tree at your working directory.
 ```python
-query.save_datatree('my_datatree.cpk')
+query.save_datatree('my_datatree.pkl')
 ```
 If you saved the data tree in a local file, you will have to explicitly load the file to reuse the saved datatree.
 ```python
-query.load_datatree('my_datatree.cpk')
+query.load_datatree('my_datatree.pkl')
 ```
 ### Select
 Let's first go with "select". You can select the EMS data fields by keywords of their names as long as the keyword searches a field. For example, the select method finds you the field "Flight Date (Exact)" by passing three different search approaches:
@@ -143,7 +143,7 @@ query.filter("'takeoff airport iata code' == 'KUL'")
 
 The current filter method has the following limitation:
 - Single filtering condition for each filter method call
-- Each filtering condition is combined only by "AND" relationship
+- Filtering conditions are combined only by "AND" relationship
 - The field keyword must be at left-hand side of a conditional expression
 - No support of NULL value filtering, which is being worked on now
 - The datetime condition should be only with the ISO8601 format
@@ -238,13 +238,13 @@ df = query.run()
 ```
 
 ## Querying Time-Series Data
-You can query data of time-series parameters with respect to individual flight records. Below is a simple example code that sends a flight query first in order to retrieve a set of flights and then sends of queries to get some of the time-series parameters for each of these flights.
+You can query data of time-series parameters with respect to individual flight records. Below is a simple example code that sends a flight query first in order to retrieve a set of flights and then sends queries to get some of the time-series parameters for each of these flights.
 
 ```python
 # Flight query with an APM profile. It will return data for 10 flights
 fq = FltQuery(c, "ems9")
 
-fq.load_datatree("stat_taxi_datatree.cpk")
+fq.load_datatree("stat_taxi_datatree.pkl")
 
 fq.select(
   "customer id", "flight record", "airframe", "flight date (exact)",
@@ -270,7 +270,8 @@ tsq.select(
     "N1 (left inbd eng)", 
     "N1 (right inbd eng)")
 
-# Run querying multiple flights at once
+# Run querying multiple flights at once. Start time = 0, end time = 15 mins (900 secs) for all flights. 
+# A better use case is that those start/end times are fed by timepoint measurements of your APM profile.
 res_dat = tsq.multi_run(flt, start = [0]*flt.shape[0], end = [15*60]*flt.shape[0])
 ```
 
@@ -286,6 +287,6 @@ The output will be Python dictionary object which contains the following data:
 In case you just want to query for a single flight, `run(...)` function will be better suited. Below is an example of time-series querying for a single flight.
 
 ```python
-res_dat = run(1901112, start=0, end=900)
+res_dat = tsq.run(1901112, start=0, end=900)
 ```
 This function will return a Pandas DataFrame that contains timepoints from 0 to 900 secs and corresponding values for selected parameters.
