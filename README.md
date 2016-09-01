@@ -3,7 +3,10 @@ A Python Wrapper of EMS API. There is also a R wrapper for EMS API. If you are i
 
 Any contribution is welcome!
 
-Dependency: numpy, pandas, networkx
+Dependency: 
+* numpy 1.11
+* pandas 0.18
+* networkx 1.11
 
 ## Installation
 Right now, I've not yet packed this into an installation package. Just download or clone emsPy in a local directory and work on there. I'll make it as an installable package soon.
