@@ -58,7 +58,7 @@ The EMS system handles with data fields based on a hierarchical tree structure. 
 
 In case that you want to query with fields that are not included in this default, stripped-down data tree, you'll have to add the field group where your fields belongs to and update your data field tree. For example, if you want to add a field group branch such as Profiles --> Standard Library Profiles --> Block-Cost Model --> P301: Block-Cost Model Planned Fuel Setup and Tests --> Measured Items --> Ground Operations (before takeoff), the execution of the following method will add the fields and their related subtree structure to the basic tree structure. You can use either the full name or just a fraction of consequtive keywords of each field group. The keyword is case insensitive.
 
-**Caution**: the process of adding a subtree usually requires a very large number of recursive RESTful API calls which takes quite a long time. Please try to specify the subtree to as low level as possible to avoid a long processing time.
+**Caution**: the process of adding a subtree usually requires a very large number of recursive RESTful API calls which take quite a long time. Please try to specify the subtree to as low level as possible to avoid a long processing time.
 
 ```python
 query.update_datatree("profiles", "standard", "block-cost", "p301", 
@@ -279,6 +279,7 @@ The inputs to function `multi_run(...)` are:
 * flt  : a vector of Flight Records or flight data in Pandas DataFrame format. The dataframe should have a column of flight records with its column name "Flight Record"
 * start: a list-like object defining the starting times (secs) of the timepoints for individual flights. The vector length must be the same as the number of flight records
 * end  : a list-like object defining the end times (secs) of the timepoints for individual flights. The vector length must be the same as the number of flight records
+* timestep: a list-like object defining the size of timesteps in seconds for individual flights. Default is set 1 second. If you set "None", it will use the parameters' own default timesteps. The vector length must be the same as the number of flight records
 
 The output will be Python dictionary object which contains the following data:
 * flt_data : Dictionary. Copy of the flight data for each flight
@@ -289,4 +290,4 @@ In case you just want to query for a single flight, `run(...)` function will be 
 ```python
 res_dat = tsq.run(1901112, start=0, end=900)
 ```
-This function will return a Pandas DataFrame that contains timepoints from 0 to 900 secs and corresponding values for selected parameters.
+This function will return a Pandas DataFrame that contains timepoints from 0 to 900 secs and corresponding values for selected parameters. You can also pass a timestep as an optional arguement. Default timestep is set 1.0 sec.
