@@ -1,8 +1,10 @@
 from emspy.query import *
 from query import Query
 
+import cPickle
 import warnings
 import pandas as pd
+import numpy as np
 
 
 class TSeriesQuery(Query):
@@ -54,27 +56,52 @@ class TSeriesQuery(Query):
         self.__queryset['end']   = end
 
 
-    def run(self, flight, start = None, end = None, timepoint = None):
+    def timepoint(self, tpoint):
+        if type(tpoint) == np.ndarray:
+            tpoint = tpoint.tolist()
+        self.__queryset['offsets'] = tpoint
+
+
+    def run(self, flight, start = None, end = None, timestep = 1.0, timepoint = None):
+
+        if start is None:
+            start = 0.0
+        if end is None:
+            end = self.flight_duration(flight)
+        if timestep is not None:
+            timepoint = np.arange(start, end, timestep)
 
         for i, p in enumerate(self.__columns):
-            if (start is not None) and (end is not None):
-                self.range(start, end)
+            # Print what is going on:
+            print "\r\x1b[K%d/%d: %s" % (i+1, len(self.__columns), p['name']),
+            
             if timepoint is not None:
-                warnings.warn("Defining time points is not yet supported. The given time points will be ignored.")
-            q = self.__queryset.copy()
+                self.timepoint(timepoint)
+            else:
+                self.range(start, end)
+            
+            q           = self.__queryset.copy()
             q['select'] = [{'analyticId': p['id']}]
+           
             resp_h, content = self._conn.request( uri_keys = ("analytic", "query"),
                                                   uri_args = (self._ems_id, flight),
                                                   jsondata = q)
             if content.has_key('message'):
                 sys.exit('API query for flight %d, parameter = "%s" was unsuccessful.\nHere is the message from API: %s' % (flight, p['name'], content['message']))
+            
             if i == 0:
                 df = pd.DataFrame({"Time (sec)": content['offsets']})
-            df[p['name']] = content['results'][0]['values']
+                df[p['name']] = content['results'][0]['values']
+            else:
+                df1 = pd.DataFrame({"Time (sec)": content['offsets']})
+                df1[p['name']] = content['results'][0]['values']  
+                df  = pd.merge(df, df1, how = "outer", on="Time (sec)", sort= True)
+        
+        print "\r\x1b[K",
         return df
 
 
-    def multi_run(self, flight, start = None, end = None, timepoint = None):
+    def multi_run(self, flight, start = None, end = None, timestep=1.0, timepoint = None, save_file = None):
 
         res       = list()
         attr_flag = False
@@ -101,5 +128,39 @@ class TSeriesQuery(Query):
                 i_res['flt_data'] = {'Flight Record': fr}
             i_res['ts_data'] = self.run(fr, start[i], end[i], timepoint[i])
             res.append(i_res)
+
+            if save_file is not None:
+                cPickle.dump(res, open(save_file, 'wb'))
+
         return res
 
+
+    def flight_duration(self, flight, unit = "second"):
+
+        p = self.__analytic.get_param("hours of data (hours)")
+        if p["id"] == "":
+            res_df = self.__analytic.search_param("hours of data (hours)", in_dataframe = True)
+            p      = res_df.iloc[0].to_dict()
+            self.__analytic._param_table = self.__analytic._param_table.append(res_df, ignore_index = True)
+            self.__analytic._save_paramtable()
+        q = {
+            "select": [{"analyticId": p["id"]}],
+            "size": 1
+        }
+
+        resp_h, content = self._conn.request( uri_keys = ("analytic", "query"),
+                                              uri_args = (self._ems_id, flight),
+                                              jsondata = q)
+        if content.has_key('message'):
+            sys.exit('API query for flight %d, parameter = "%s" was unsuccessful.\nHere is the message from API: %s' % (flight, p['name'], content['message']))
+        fl_len = content['results'][0]['values'][0]
+
+        if unit == "second":
+            t = fl_len * 60 * 60
+        elif unit == "minute":
+            t = fl_len * 60
+        elif unit == "hour":
+            t = fl_len
+        else:
+            sys.exit("Unrecognizable time unit (%s)." % unit)
+        return t

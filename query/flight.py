@@ -62,6 +62,8 @@ class Flight:
                     res.append(get_shortest(fres)) 
                 else:
                     res += fres
+            else:
+                raise ValueError("Nothing with Field keyword '%s' was found in the EMS." % f)
         if len(res) == 0: res = None
         elif len(res) == 1: res = res[0]
         return res

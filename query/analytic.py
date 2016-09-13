@@ -40,7 +40,7 @@ class Analytic:
 		if self._param_table.empty:
 			return dict(id="", name="", description="", units="")
 		# If the param table is not empty, do search by keyword
-		bool_idx = self._param_table['name'].str.contains(keyword, regex=False)
+		bool_idx = self._param_table['name'].str.contains(keyword, case = False, regex=False)
 		df = self._param_table[bool_idx]
 		# If the search result is empty, return empty param dict
 		if df.empty:
