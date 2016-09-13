@@ -110,8 +110,12 @@ class TSeriesQuery(Query):
             attr_flag = True
         else:
             FR = flight
+
+        # param processing
         if start is None:       start       = [None]*len(FR)
-        if end is None:         end         = [None]*len(FR)
+        if end   is None:       end         = [None]*len(FR)
+        if not hasattr(timestep, "__len__"):
+            timestep = [timestep]*len(FR)
         if timepoint is None:   
             timepoint   = [None]*len(FR)
         else: 
