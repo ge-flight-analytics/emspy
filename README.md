@@ -290,4 +290,4 @@ In case you just want to query for a single flight, `run(...)` function will be 
 ```python
 res_dat = tsq.run(1901112, start=0, end=900)
 ```
-This function will return a Pandas DataFrame that contains timepoints from 0 to 900 secs and corresponding values for selected parameters. You can also pass a timestep as an optional arguement. Default timestep is set 1.0 sec.
+This function will return a Pandas DataFrame that contains timepoints from 0 to 900 secs and corresponding values for selected parameters. You can also pass a timestep as an optional argument. Default timestep is set 1.0 sec.
