@@ -16,6 +16,7 @@ class Flight:
         self._tree   = None
         self._fields = []
         self.__cntr  = 0
+        self._key_maps = dict()
         
         if self.__treefile_exists() and not new_data:
             self.load_tree()
@@ -83,16 +84,21 @@ class Flight:
         else:
             fld_id = field_id
 
-        db_id = self.get_database()['id']
+        if self._key_maps.has_key(fld_id):
+            kmap = self._key_maps[fld_id]
+        else:
+            db_id = self.get_database()['id']
+            print("Getting key-value mappings from API. It's one time call per discrete field, but takes quite long time for fields like runway IDs.")
 
+            resp_h, content = self._conn.request( uri_keys=('database','field'),
+                                                  uri_args=(self._ems_id, db_id, fld_id))
+            kmap = content['discreteValues']
+            self._key_maps[fld_id] = kmap
 
-        resp_h, content = self._conn.request( uri_keys=('database','field'),
-                                              uri_args=(self._ems_id, db_id), 
-                                              body = {'fieldId': fld_id})
         if in_dict:
-            return content['discreteValues']
-        values = content['discreteValues'].values()
-        return values
+            return kmap
+
+        return kmap.values()
 
 
     def get_value_id(self, value, field=None, field_id = None):
