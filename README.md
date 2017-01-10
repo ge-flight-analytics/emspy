@@ -245,7 +245,7 @@ The `run()` method takes care of the repeated async request for a query whose re
 
 The batch data size for the async request is set 10000 rows as default. If you want to change this size,
 ```python
-# Set the batch size as 2000 rows per request
+# Set the batch size as 20,000 rows per request
 df = query.run(n_row = 20000)
 ``` 
 
