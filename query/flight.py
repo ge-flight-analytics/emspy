@@ -88,7 +88,7 @@ class Flight:
             kmap = self._key_maps[fld_id]
         else:
             db_id = self.get_database()['id']
-            print("Getting key-value mappings from API. It's one time call per discrete field, but takes quite long time for fields like runway IDs.")
+            print("Getting key-value mappings from API. (Caution: runway ID takes much longer)")
 
             resp_h, content = self._conn.request( uri_keys=('database','field'),
                                                   uri_args=(self._ems_id, db_id, fld_id))

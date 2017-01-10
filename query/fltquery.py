@@ -22,6 +22,9 @@ class FltQuery(Query):
 
 
 	def reset(self):
+		'''
+		Resets the API query to send. This should be called before creating a new query.
+		'''
 
 		self.__columns = []
 
@@ -30,7 +33,6 @@ class FltQuery(Query):
 			"groupBy": [],
 			"orderBy": [],
 			"distinct": True,
-			"top": 10,
 			"format": "none"
 		}
 
@@ -71,7 +73,7 @@ class FltQuery(Query):
 
 
 	def order_by(self, field, order='asc'):
-		'''Functional equivalent of SQL's order by''',
+		'''Functional equivalent of SQL's order by'''
 		if order not in ['asc', 'desc']:
 			sys.exit("Ordering option must be one of %s." % ['asc', 'desc'])
 		self.__queryset['orderBy'].append({
@@ -164,7 +166,6 @@ class FltQuery(Query):
 
 	def get_top(self, n):
 
-		if n > 5000: n = 5000
 		self.__queryset['top'] = n
 
 
@@ -187,12 +188,22 @@ class FltQuery(Query):
 		return self.__queryset
 
 
-	def run(self, output = "dataframe"):
+	def simple_run(self, output = "dataframe"):
 		'''
-		output type = ["raw", "dataframe"]
-		More types to add.
+		Sends query to EMS API via the regular query call. The regular query call has a size limit
+		in the returned data, which is 5000 rows max. Any output that has greater than 5000 rows 
+		will be truncated. For the query that is expected to return with large data. Please use the 
+		async_run method.
+
+		Input
+		-----
+		output: desired output data format. Either "raw" or "dataframe".
+
+		Output
+		------
+		Returned data for query in Pandas' DataFrame format
 		'''
-		print('Sending a query to EMS ...')
+		print('Sending a simple query to EMS ...')
 		resp_h, content = self._conn.request(	
 			rtype="POST", 
 			uri_keys=('database','query'),
@@ -209,7 +220,100 @@ class FltQuery(Query):
 			raise ValueError("Requested an unknown output type.")
 
 
+
+	def async_run(self, n_row = 10000):
+		'''
+		Sends query to EMS API via async-query call. The async-query does not process
+		the query as a single batch for a query expecting a large data. You will have
+		to call it multiple times. This function do this multiple calls for you.
+
+		Input
+		-----
+		n_row: batch size of a single async call. Default is 10000.
+
+		Output
+		------
+		Returned data for query in Pandas' DataFrame format
+		'''
+
+		print 'Sending and opening an async-query to EMS ...',
+		resp_h, content = self._conn.request(
+			rtype = "POST",
+			uri_keys = ('database', 'open_asyncq'),
+			uri_args = (self._ems_id, self.__flight.get_database()['id']),
+			jsondata = self.__queryset
+			)
+		if not content.has_key('id'):
+			sys.exit("Opening Async query did not return the query Id.")
+		query_id = content['id']
+		query_header = content['header']
+		print 'Done.'
+
+		ctr = 0
+		df = None
+		while True:
+			print " === Async call: %d ===" % (ctr+1)
+			try:
+				resp_h, content = self._conn.request(
+					rtype= "GET",
+					uri_keys = ('database', 'get_asyncq'),
+					uri_args = (self._ems_id, 
+								self.__flight.get_database()['id'],
+								query_id,
+								n_row*ctr,
+								n_row*(ctr+1)-1)
+					)
+				content['header'] = query_header
+				dff = self.__to_dataframe(content)
+			except:
+				print "Something's wrong. Returning what has been sent so far."				
+				from pprint import pprint
+				pprint(resp_h)
+				pprint(content)
+				return df
+			
+			if ctr == 0:
+				df = dff
+			else:
+				df = df.append(dff, ignore_index = True)
+
+			print "Received up to %d rows." % df.shape[0]
+			if dff.shape[0] < n_row:
+				break	
+			ctr += 1
+		print "Done."
+		return df
+
+
+	def run(self, n_row = 10000):
+		'''
+		Sends query to EMS API. It uses either regular or async query call depending on
+		the expected size of output data. It supports only Pandas DataFrame as the output
+		format.
+
+		Input
+		-----
+		n_row: batch size of a single async call. Default is 10000.
+
+		Output
+		------
+		Returned data for query in Pandas' DataFrame format
+		'''
+		Nout = None
+		if self.__queryset.has_key('top'):
+			Nout = self.__queryset['top']
+
+		if (Nout is not None) and (Nout <= 5000):
+			return self.simple_run(output= "dataframe")
+
+		return self.async_run(n_row = n_row)
+
+
 	def __to_dataframe(self, json_output):
+		'''
+		Changes Dict (JSON) formatted raw output from the EMS API to Pandas' 
+		DataFrame.
+		'''
 
 		print("Raw JSON output to Pandas dataframe...")
 		col      = [h['name'] for h in json_output['header']]
@@ -256,6 +360,9 @@ class FltQuery(Query):
 
 
 	def __get_rwy_id(self, cname):
+		'''
+		Deprecated
+		'''
 
 		print("\n --Running a special routine for querying runway IDs. This will make the querying twice longer.")
 		qs = self.__queryset

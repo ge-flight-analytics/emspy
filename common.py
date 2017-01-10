@@ -29,7 +29,10 @@ uris = {
 		'group'			: '/v2/ems-systems/%s/database-groups',			#(ems-system_id)
 		'field_group'	: '/v2/ems-systems/%s/databases/%s/field-groups',	#(ems-system_id, data_src_id)
 		'field'			: '/v2/ems-systems/%s/databases/%s/fields/%s', #(ems-system_id, database_id, field_id)
-		'query'			: '/v2/ems-systems/%s/databases/%s/query'
+		'query'			: '/v2/ems-systems/%s/databases/%s/query',
+		'open_asyncq'	: '/v2/ems-systems/%s/databases/%s/async-query', #(ems-system_id, database_id)
+		'get_asyncq'	: '/v2/ems-systems/%s/databases/%s/async-query/%s/read/%s/%s', #(ems-system_id, database_id, async_query_id, start_row, end_row)
+		'close_asyncq'	: '/v2/ems-systems/%s/databases/%s/async-query/%s'
 	},
 	'analytic': {
 		'search'	: '/v2/ems-systems/%s/analytics',    # (emsSystemId)
@@ -39,13 +42,5 @@ uris = {
 		'query'		: '/v2/ems-systems/%s/flights/%s/analytics/query', # (emsSystemId, flightId)
 		'metadata'  : '/v2/ems-systems/%s/flights/%s/analytics/metadata' # (emsSystemId, flightId)
 	}
-	# 'param': {
-	# 	'info'		: '/v1/ems/%s/parameter/%s',		# (ems-system_id, prm_id)
-	# 	'group'		: '/v1/ems/%s/parameter-group',		# (ems-system_id)
-	# 	'search'	: '/v1/ems/%s/parameters',			# (ems-system_id)
-	# 	'byrange'	: '/v1/ems/%s/flight/%s/parameter/%s/multiple-by-range', 	#(ems-system_id, flt_id, prm_id)
-	# 	'byoffset'	: '/v1/ems/%s/flight/%s/parameter/%s/multiple-by-offset',   #(ems-system_id, flt_id, prm_id)
-	# 	'byrange2'	: '/v1/ems/%s/flight/%s/parameter/%s/multiple-sampled-values',
-	# 	'byoffset2' : '/v1/ems/%s/flight/%s/parameter/%s/multiple-sampled-offsets'
-	# }
+
 }
