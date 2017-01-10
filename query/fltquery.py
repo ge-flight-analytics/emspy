@@ -281,6 +281,7 @@ class FltQuery(Query):
 			if dff.shape[0] < n_row:
 				break	
 			ctr += 1
+			
 		print "Done."
 		return df
 
