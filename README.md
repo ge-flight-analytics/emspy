@@ -156,8 +156,10 @@ You can pass additional attributes supported by EMS query:
 # Returns only the distinct rows. Turned on as default
 query.distinct(True)
 
-# EMS allows max. 5000 of the rows for the output table. Default is 10. 
+# If you want get top N the rows of the output data in response to the query, 
 query.get_top(5000)
+
+# This is optional. If you don't set this value, all output data will be returned.
 ```
 
 ### Viewing JSON Translation of Your Query
@@ -236,6 +238,16 @@ df = query.run()
 
 # This will return your data in Pandas dataframe format
 ```
+
+EMS API supports two different query executions which are regular and async queries. The regular query has a data size limit for the output data, which is 5000 rows. On the other hand, the async query is able to handle large output data by letting you send repeated requests for mini batches of the large output data.
+
+The `run()` method takes care of the repeated async request for a query whose returning data is expected to be large.
+
+The batch data size for the async request is set 10000 rows as default. If you want to change this size,
+```python
+# Set the batch size as 2000 rows per request
+df = query.run(n_row = 20000)
+``` 
 
 ## Querying Time-Series Data
 You can query data of time-series parameters with respect to individual flight records. Below is a simple example code that sends a flight query first in order to retrieve a set of flights and then sends queries to get some of the time-series parameters for each of these flights.
