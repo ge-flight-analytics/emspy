@@ -239,11 +239,11 @@ df = query.run()
 # This will return your data in Pandas dataframe format
 ```
 
-EMS API supports two different query executions which are regular and async queries. The regular query has a data size limit for the output data, which is 5000 rows. On the other hand, the async query is able to handle large output data by letting you send repeated requests for mini batches of the large output data.
+EMS API supports two different query executions which are regular and async queries. The regular query has a data size limit for the output data, which is 25000 rows. On the other hand, the async query is able to handle large output data by letting you send repeated requests for mini batches of the large output data.
 
 The `run()` method takes care of the repeated async request for a query whose returning data is expected to be large.
 
-The batch data size for the async request is set 10000 rows as default. If you want to change this size,
+The batch data size for the async request is set  rows as default. If you want to change this size,
 ```python
 # Set the batch size as 20,000 rows per request
 df = query.run(n_row = 20000)

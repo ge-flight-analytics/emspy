@@ -191,7 +191,7 @@ class FltQuery(Query):
 	def simple_run(self, output = "dataframe"):
 		'''
 		Sends query to EMS API via the regular query call. The regular query call has a size limit
-		in the returned data, which is 5000 rows max. Any output that has greater than 5000 rows 
+		in the returned data, which is 25000 rows max. Any output that has greater than 25000 rows 
 		will be truncated. For the query that is expected to return with large data. Please use the 
 		async_run method.
 
@@ -221,7 +221,7 @@ class FltQuery(Query):
 
 
 
-	def async_run(self, n_row = 10000):
+	def async_run(self, n_row = 25000):
 		'''
 		Sends query to EMS API via async-query call. The async-query does not process
 		the query as a single batch for a query expecting a large data. You will have
@@ -229,7 +229,7 @@ class FltQuery(Query):
 
 		Input
 		-----
-		n_row: batch size of a single async call. Default is 10000.
+		n_row: batch size of a single async call. Default is 25000.
 
 		Output
 		------
@@ -286,7 +286,7 @@ class FltQuery(Query):
 		return df
 
 
-	def run(self, n_row = 10000):
+	def run(self, n_row = 25000):
 		'''
 		Sends query to EMS API. It uses either regular or async query call depending on
 		the expected size of output data. It supports only Pandas DataFrame as the output
@@ -294,7 +294,7 @@ class FltQuery(Query):
 
 		Input
 		-----
-		n_row: batch size of a single async call. Default is 10000.
+		n_row: batch size of a single async call. Default is 25000.
 
 		Output
 		------
@@ -304,7 +304,7 @@ class FltQuery(Query):
 		if self.__queryset.has_key('top'):
 			Nout = self.__queryset['top']
 
-		if (Nout is not None) and (Nout <= 5000):
+		if (Nout is not None) and (Nout <= 25000):
 			return self.simple_run(output= "dataframe")
 
 		return self.async_run(n_row = n_row)
