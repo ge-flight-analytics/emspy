@@ -1,4 +1,4 @@
-import json, urllib, urllib2, sys
+import json, urllib, urllib2, sys, StringIO, gzip
 import pprint as pp
 from common import *
 
@@ -20,13 +20,13 @@ class Connection:
 		if (user is not None) and (pwd is not None):
 			self.connect(user, pwd, proxies, verbose)
 		else:
-			print("An empty connection is instantiated because crendentials are not provided.\n")
+			print("An empty connection is instantiated because credentials are not provided.\n")
 
 
 
 	def connect(self, user, pwd, proxies=None, verbose=False):
 		'''
-		Connect to EMS system using given crendentials.
+		Connect to EMS system using given credentials.
 		'''
 		if proxies is not None:
 			proxy_handler = urllib2.ProxyHandler(proxies)
@@ -66,7 +66,7 @@ class Connection:
 
 		# If no customer headers given, use the token header
 		if headers is None: 
-			headers = {'Authorization': ' '.join([self.token_type, self.token])}
+			headers = {'Authorization': ' '.join([self.token_type, self.token]), 'Accept-Encoding': 'gzip'}
 
 		# If uri_keys are given, find the uri from the uris dictionary
 		if uri_keys is not None:
@@ -96,14 +96,20 @@ class Connection:
 				print("Http status code: %d" % statcode)
 				verbose = True
 		except:
-			print("Tring to reconnect the EMS API.")
+			print("Trying to reconnect the EMS API.")
 			self.reconnect()
 			print("Done.")
-			resp = urllib2.urlopen(req)			
+			resp = urllib2.urlopen(req)
 		resp_h   = resp.info().headers
-		content  = json.loads(resp.read())
-		
 
+		# If the response is compressed, decompress it.
+		if response.info().get('Content-Encoding') == 'gzip':
+			buffer = StringIO(response.read())
+			file = gzip.GzipFile(fileobj=buffer)
+			content = file.read()
+		else:
+			content  = json.loads(resp.read())
+			
 		if verbose:
 			print("URL: %s" % resp.geturl())
 			pp.pprint(resp_h)
