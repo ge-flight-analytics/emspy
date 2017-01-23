@@ -103,12 +103,12 @@ class Connection:
 		resp_h   = resp.info().headers
 
 		# If the response is compressed, decompress it.
-		if response.info().get('Content-Encoding') == 'gzip':
-			buffer = StringIO(response.read())
+		if resp.info().get('Content-Encoding') == 'gzip':
+			buffer = StringIO.StringIO(resp.read())
 			file = gzip.GzipFile(fileobj=buffer)
-			content = file.read()
+			content = json.loads(file.read())
 		else:
-			content  = json.loads(resp.read())
+			content = json.loads(resp.read())
 			
 		if verbose:
 			print("URL: %s" % resp.geturl())
