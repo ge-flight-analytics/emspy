@@ -243,7 +243,7 @@ EMS API supports two different query executions which are regular and async quer
 
 The `run()` method takes care of the repeated async request for a query whose returning data is expected to be large.
 
-The batch data size for the async request is set  rows as default. If you want to change this size,
+The batch data size for the async request is set 25,000 rows as default (which is the maximum). If you want to change this size,
 ```python
 # Set the batch size as 20,000 rows per request
 df = query.run(n_row = 20000)

@@ -74,7 +74,9 @@ class Connection:
 
 		# Provide the input to the request
 		if uri_args is not None:
-			uri    = uri % uri_args
+			# uri    = uri % uri_args
+			# Unencoded url does not work all of sudden...
+			uri = uri % tuple(map(lambda x: urllib.quote(x) if type(x) in (str, unicode) else x, uri_args))
 
 		# Append query to the uri if body is given
 		if body is not None:
@@ -87,6 +89,7 @@ class Connection:
 		if jsondata is not None:
 			headers['Content-Type'] = 'application/json'
 			data = json.dumps(jsondata)
+
 
 		req = urllib2.Request(uri, data=data, headers=headers)
 		try:
