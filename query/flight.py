@@ -66,8 +66,9 @@ class Flight:
 
 
     def __save_fieldtree(self):
-        Flight.metadata.delete_data("fieldtree", "ems_id = %d and db_id = '%s'" % (self._ems_id, self._db_id))
-        Flight.metadata.append_data("fieldtree", self._trees['fieldtree'])
+        if len(self._trees['fieldtree']) > 0:
+            Flight.metadata.delete_data("fieldtree", "ems_id = %d and db_id = '%s'" % (self._ems_id, self._db_id))
+            Flight.metadata.append_data("fieldtree", self._trees['fieldtree'])
 
 
     def __get_dbtree(self):
@@ -86,8 +87,9 @@ class Flight:
 
 
     def __save_dbtree(self):
-        Flight.metadata.delete_data("dbtree", "ems_id = %d" % self._ems_id)
-        Flight.metadata.append_data("dbtree", self._trees['dbtree'])        
+        if len(self._trees['dbtree']) > 0:
+            Flight.metadata.delete_data("dbtree", "ems_id = %d" % self._ems_id)
+            Flight.metadata.append_data("dbtree", self._trees['dbtree'])        
 
 
     def __get_kvmaps(self):
@@ -96,8 +98,9 @@ class Flight:
 
 
     def __save_kvmaps(self):
-        Flight.metadata.delete_data("kvmaps", "ems_id = %d" % self._ems_id)
-        Flight.metadata.append_data("kvmaps", self._trees['kvmaps'])     
+        if len(self._trees['kvmaps']) > 0:
+            Flight.metadata.delete_data("kvmaps", "ems_id = %d" % self._ems_id)
+            Flight.metadata.append_data("kvmaps", self._trees['kvmaps'])     
 
 
     def set_database(self, name):
@@ -209,7 +212,7 @@ class Flight:
 
         cntr = 0
         while len(parent_id) > 0:
-            child_id = self.__get_children(parent_id)['id'].tolist()
+            child_id = self.__get_children(parent_id, treetype=treetype)['id'].tolist()
             rm_list += child_id
             parent_id = child_id
             cntr += 1
@@ -385,7 +388,6 @@ class Flight:
                                  'value': km.values()})
             self._trees['kvmaps'] = self._trees['kvmaps'].append(kmap, ignore_index=True)
             self.__save_kvmaps()
-            # Flight.metadata.store_data("kvmaps", kmap)
 
         if in_dict:
             res = dict()

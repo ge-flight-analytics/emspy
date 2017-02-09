@@ -76,7 +76,11 @@ class Connection:
 		if uri_args is not None:
 			# uri    = uri % uri_args
 			# Unencoded url does not work all of sudden...
-			uri = uri % tuple(map(lambda x: urllib.quote(x) if type(x) in (str, unicode) else x, uri_args))
+			encode_args = lambda x: urllib.quote(x) if type(x) in (str, unicode) else x
+			if type(uri_args) in (list, tuple):
+				uri = uri % tuple(map(encode_args, uri_args))
+			else:
+				uri = uri % encode_args(uri_args)
 
 		# Append query to the uri if body is given
 		if body is not None:
