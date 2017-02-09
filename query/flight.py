@@ -198,31 +198,46 @@ class Flight:
 
     def __get_children(self, parent_id, treetype='fieldtree'):
         tr = self._trees[treetype]
+        # tr = tr[tr.nodetype != ('field' if treetype=='fieldtree' else 'dbtree')]
+
         if isinstance(parent_id, (list, tuple, pd.Series)):
             return tr[tr.parent_id.isin(parent_id)]
         return tr[tr.parent_id == parent_id]
 
+
+    def __remove_subtree(self, parent, treetype = 'fieldtree'):
+        tr = self._trees[treetype]
+        chld = tr[tr.parent_id == parent['id']]
+
+        # Update the instance tree by deleting children
+        self._trees[treetype] = tr[tr.parent_id != parent['id']]
+
+        # Iterate and do recursive removal of children of children
+        leaftype = 'field' if treetype=='fieldtree' else 'database'
+        for i, x in chld[chld.nodetype!=leaftype].iterrows():
+            self.__remove_subtree(x, treetype = treetype)
+
     
-    def __remove_subtree(self, parent, rm_parent=True, treetype='fieldtree'):
+    # def __remove_subtree(self, parent, rm_parent=True, treetype='fieldtree'):
 
-        rm_list = list()
-        if rm_parent:
-            rm_list.append(parent['id'])
-        parent_id = [parent['id']]
+    #     rm_list = list()
+    #     if rm_parent:
+    #         rm_list.append(parent['id'])
+    #     parent_id = [parent['id']]
 
-        cntr = 0
-        while len(parent_id) > 0:
-            child_id = self.__get_children(parent_id, treetype=treetype)['id'].tolist()
-            rm_list += child_id
-            parent_id = child_id
-            cntr += 1
-            if cntr > 1e4:
-                sys.exit("Something's wrong. Subtree removal went over 10,000 iterations.")
-        if len(rm_list) > 0:
-            tr = self._trees[treetype]
-            self._trees[treetype] = tr[~tr.id.isin(rm_list)]
-            print("Removed the subtree of %s (%s) with total of %d nodes (fields/databases/groups)." % (
-                parent['name'], parent['nodetype'], len(rm_list)))
+    #     cntr = 0
+    #     while len(parent_id) > 0:
+    #         child_id = self.__get_children(parent_id, treetype=treetype)['id'].tolist()
+    #         rm_list += child_id
+    #         parent_id = child_id
+    #         cntr += 1
+    #         if cntr > 1e4:
+    #             sys.exit("Something's wrong. Subtree removal went over 10,000 iterations.")
+    #     if len(rm_list) > 0:
+    #         tr = self._trees[treetype]
+    #         self._trees[treetype] = tr[~tr.id.isin(rm_list)]
+    #         print("Removed the subtree of %s (%s) with total of %d nodes (fields/databases/groups)." % (
+    #             parent['name'], parent['nodetype'], len(rm_list)))
 
 
     
@@ -301,7 +316,7 @@ class Flight:
             parent = get_shortest(parent)
 
         print "=== Starting to update subtree from '%s (%s)' ===" % (parent['name'], parent['nodetype'])
-        self.__remove_subtree(parent, rm_parent=False, treetype=treetype)
+        self.__remove_subtree(parent, treetype=treetype)
         
         self.__add_subtree(parent, exclude_tree, treetype=treetype)
 
