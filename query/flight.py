@@ -111,6 +111,7 @@ class Flight:
         self.__update_children(self.get_database(), treetype = "fieldtree")
 
         print("Using database '%s'." % self.get_database()['name'])
+		
 
     def get_database(self):
 
