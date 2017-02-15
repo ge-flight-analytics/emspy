@@ -277,9 +277,9 @@ class FltQuery(Query):
 				dff = self.__to_dataframe(content)
 			except:
 				print "Something's wrong. Returning what has been sent so far."				
-				from pprint import pprint
-				pprint(resp_h)
-				pprint(content)
+				# from pprint import pprint
+				# pprint(resp_h)
+				# pprint(content)
 				return df
 			
 			if ctr == 0:

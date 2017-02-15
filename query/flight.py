@@ -81,6 +81,7 @@ class Flight:
                       'parent_id': None}
             self._trees['dbtree'] = pd.DataFrame([dbroot])
             self.__update_children(dbroot, treetype = "dbtree")
+            self.update_tree("fdw", treetype = "dbtree", exclude_tree = ["APM Events"])
             self.__save_dbtree()
             T = self._trees['dbtree']
         return T
@@ -439,7 +440,7 @@ def listdiff(a, b):
 
 
 def treat_spchar(s):
-    sp_chr = ("." ,"^" ,"(" ,")" ,"[" ,"]" ,"{", "}","-", "+", "?", "!", "*", "$" "|", "&")
+    sp_chr = ("." ,"^" ,"(" ,")" ,"[" ,"]" ,"{", "}","<", ">","-", "+", "?", "!", "*", "$", "|", "&","%")
     for x in sp_chr:
         s = s.replace(x, "\\"+x)
     return s
