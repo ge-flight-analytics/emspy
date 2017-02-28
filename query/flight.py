@@ -45,7 +45,7 @@ class Flight:
 
         from shutil import copyfile
         ld = Flight.metadata
-        if (file_name is not None) and (ld.file_loc() == os.path.abspath(file_name)):
+        if (file_name is not None) and (ld.file_loc() != os.path.abspath(file_name)):
             # A new file location is given, copy all the data in the current file with new file name,
             # and save the currently loaded tree data into the new file too.
             copyfile(Flight.metadata.file_loc(), file_name)
@@ -354,7 +354,7 @@ class Flight:
                 for i, ff in enumerate(f):
                     ff = treat_spchar(ff)
                     parent_id < - chld[chld.name.str.contains(ff, case=False)]['id'].tolist()
-                    if i < len(f):
+                    if i < len(f)-1:
                         chld < - chld[chld.parent_id.isin(parent_id)]
                     else:
                         chld < - chld[(chld.nodetype == "field") & chld.name.str.contains(ff, case=False)]
