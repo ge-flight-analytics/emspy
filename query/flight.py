@@ -354,7 +354,7 @@ class Flight:
                 for i, ff in enumerate(f):
                     ff = treat_spchar(ff)
                     parent_id < - chld[chld.name.str.contains(ff, case=False)]['id'].tolist()
-                    if i < len(f)-1:
+                    if i < (len(f)-1):
                         chld < - chld[chld.parent_id.isin(parent_id)]
                     else:
                         chld < - chld[(chld.nodetype == "field") & chld.name.str.contains(ff, case=False)]
