@@ -1,5 +1,7 @@
 
-uri_root = 'https://fas.efoqa.com/api'
+# uri_root = 'https://fas.efoqa.com/api'
+uri_root = 'https://ceod.efoqa.com/api'
+# uri_root = 'https://ems.efoqa.com/api'
 uris = {
 	'sys': {
 		'auth': '/token'
