@@ -9,11 +9,12 @@ class Connection:
 	Object for connection to EMS API
 	'''
 
-	def __init__(self, user=None, pwd=None, proxies=None, verbose=False):
+	def __init__(self, user=None, pwd=None, proxies=None, verbose=False, server="old"):
 		self.__user 		= user
 		self.__pwd  		= pwd
 		self.__proxies      = proxies
 		self.__ntrials      = 0
+		self.__uri_root     = uri_root[server]
 		self.token 			= None
 		self.token_type 	= None
 
@@ -70,7 +71,7 @@ class Connection:
 
 		# If uri_keys are given, find the uri from the uris dictionary
 		if uri_keys is not None:
-			uri    = uri_root + uris[uri_keys[0]][uri_keys[1]]
+			uri    = self.__uri_root + uris[uri_keys[0]][uri_keys[1]]
 
 		# Provide the input to the request
 		if uri_args is not None:
@@ -129,4 +130,3 @@ def print_resp(resp):
 	
 	for r in resp:
 		pp.pprint(r)
-
