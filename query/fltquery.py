@@ -358,7 +358,7 @@ class FltQuery(Query):
 					if len(k_map) == 0:
 						df[cname] = self.__get_rwy_id(cname)
 					else:
-						df[cname] = df[cname].astype(str)
+						# df[cname] = df[cname].astype(str)
 						df = df.replace({cname: k_map})
 				elif ctype=='boolean':
 					df[cname] = df[cname].astype(bool)

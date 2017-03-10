@@ -404,6 +404,8 @@ class Flight:
                                  'id': fld_id,
                                  'key': km.keys(),
                                  'value': km.values()})
+            kmap = kmap.astype({'key':int})
+
             self._trees['kvmaps'] = self._trees['kvmaps'].append(kmap, ignore_index=True)
             self.__save_kvmaps()
 
