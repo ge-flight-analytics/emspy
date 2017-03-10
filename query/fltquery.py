@@ -340,22 +340,20 @@ class FltQuery(Query):
 		# this query result at the runway ID column of the original query result.
 		# I know this is crappy but it seems the best way I could find.
 		for cid, cname, ctype in zip(col_id, col, coltypes):
-			try:
-				if ctype=='number':				
-					df[cname] = pd.to_numeric(df[cname])
-				elif ctype=='discrete':
-					k_map = self.__flight.list_allvalues(field_id = cid, in_dict = True)
-					if len(k_map) == 0:
-						df[cname] = self.__get_rwy_id(cname)
-					else:
-						df[cname] = df[cname].astype(str)
-						df = df.replace({cname: k_map})
-				elif ctype=='boolean':
-					df[cname] = df[cname].astype(bool)
-				elif ctype=='dateTime':
-					df[cname] = pd.to_datetime(df[cname])
-			except ValueError:
-				pass
+			if ctype=='number':				
+				df[cname] = pd.to_numeric(df[cname])
+			elif ctype=='discrete':
+				k_map = self.__flight.list_allvalues(field_id = cid, in_dict = True)
+				if len(k_map) == 0:
+					df[cname] = self.__get_rwy_id(cname)
+				else:
+					# df[cname] = df[cname].astype(str)
+					# df = df.replace({cname: k_map})
+					df = df.replace({cname: k_map})
+			elif ctype=='boolean':
+				df[cname] = df[cname].astype(bool)
+			elif ctype=='dateTime':
+				df[cname] = pd.to_datetime(df[cname])
 		print("Done.")
 		return df
 

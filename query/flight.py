@@ -92,7 +92,12 @@ class Flight:
 
             resp_h, content = self._conn.request( uri_keys=('database','field'),
                                                   uri_args=(self._ems_id, db_id, fld_id))
-            kmap = content['discreteValues']
+            aa = content['discreteValues']
+            kmap = dict()
+            # The keys are returned as string, but they'd better be integers. Change them
+            # to integers
+            for k,v in aa.items():
+                kmap[int(k)] = v
             self._key_maps[fld_id] = kmap
 
         if in_dict:
