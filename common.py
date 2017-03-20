@@ -3,7 +3,8 @@
 # uri_root = 'https://ceod.efoqa.com/api'
 uri_root = {
 	'old':'https://ems.efoqa.com/api',
-	'new':'https://ceod.efoqa.com/api'
+	'new':'https://ceod.efoqa.com/api',
+	'test': 'https://emsapi.ausdig.com'
 }
 
 uris = {

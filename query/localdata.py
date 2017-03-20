@@ -72,7 +72,7 @@ class LocalData:
 
 		if self.table_exists(table_name):
 			if condition is None:
-				self._conn.execute("DROP TABLE %s")
+				self._conn.execute("DROP TABLE %s" % table_name)
 			else:
 				self._conn.execute("DELETE FROM %s WHERE %s;" % (table_name, condition))
 			self._conn.commit()
