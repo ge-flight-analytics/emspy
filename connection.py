@@ -145,7 +145,7 @@ class Connection:
 		# Normally you do NOT want to ignore SSL errors, but this is
 		# sometimes necessary on beta API endpoints wihtout a proper cert.
 		return urllib2.urlopen(req,
-							   context = context=ssl._create_unverified_context() if self.__ignore_ssl_errors else None)
+							   context = ssl._create_unverified_context() if self.__ignore_ssl_errors else None)
 
 
 def print_resp(resp):

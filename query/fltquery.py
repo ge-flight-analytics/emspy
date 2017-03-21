@@ -365,7 +365,7 @@ class FltQuery(Query):
 				elif ctype=='dateTime':
 					df[cname] = pd.to_datetime(df[cname])
 			except ValueError:
-				pass
+				print "Somethings wrong when converting to Pandas DataFrame for column '%s' (type: %s)." % (cname, ctype)
 		print("Done.")
 		return df
 
