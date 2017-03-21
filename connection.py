@@ -9,7 +9,7 @@ class Connection:
 	Object for connection to EMS API
 	'''
 
-	def __init__(self, user=None, pwd=None, proxies=None, verbose=False, server="old"):
+	def __init__(self, user=None, pwd=None, proxies=None, verbose=False, server="prod"):
 		self.__user 		= user
 		self.__pwd  		= pwd
 		self.__proxies      = proxies

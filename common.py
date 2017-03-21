@@ -2,9 +2,11 @@
 # uri_root = 'https://fas.efoqa.com/api'
 # uri_root = 'https://ceod.efoqa.com/api'
 uri_root = {
-	'old':'https://ems.efoqa.com/api',
-	'new':'https://ceod.efoqa.com/api',
-	'test': 'https://emsapi.ausdig.com'
+	'prod'		: 'https://ems.efoqa.com/api',
+	'cluster'	: 'https://ceod.efoqa.com/api',
+	'stable'	: 'https://emsapi.ausdig.com/api',
+	'beta'		: 'https://emsapibeta.ausdig.com/api',
+	'nightly'	: 'https://emsapitest.ausdig.com/api'
 }
 
 uris = {

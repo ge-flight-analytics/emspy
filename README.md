@@ -1,15 +1,22 @@
 # emsPy
-A Python Wrapper of EMS API. There is also a R wrapper for EMS API. If you are interest in the R version, please visit <https://github.build.ge.com/212401522/Rems>. The goal of this project is provide a way to bring EMS data in Python environment via the EMS's RESTful API. The project is still in an early alpha stage, so is not guarranteed working reliably nor well documented. I'll beef up the documentation as soon as possible.
+A Python Wrapper of EMS API. There is also a R wrapper for EMS API. If you are interest in the R version, please visit <https://github.com/ge-flight-analytics/Rems>. The goal of this project is provide a way to bring EMS data in Python environment via the EMS's RESTful API. The project is still in an early alpha stage, so is not guarranteed working reliably nor well documented. I'll beef up the documentation as soon as possible.
 
 Any contribution is welcome!
 
 Dependency: 
-* numpy 1.11
-* pandas 0.18
-* networkx 1.11
+* numpy >= 1.11 
+* pandas >= 0.18
+
+## v0.2 Major Changes
+* User can select an API server.
+* User can select an arbitrary database such as Flight, Operational, and Event databases. Only the EMS Flight database was accessible in v0.1.
+* Meta-data (EMS data/database tree structures) is stored in SQLite format instead of Python's own pickle format. This means better reusability of the meta-data. You can use the same meta-data file from Rems, the R wrapper version without generating one separately for Rems. 
+* No more dependency to NetworkX
+
 
 ## Installation
 Right now, I've not yet packed this into an installation package. Just download or clone emsPy in a local directory and work on there. I'll make it as an installable package soon.
+
 
 ## Make an EMS API Connection
 
@@ -24,73 +31,85 @@ proxies = {
 ```python
 from emspy import Connection
 
-c = Connection("efoqa_usrname", "efoqa_password", proxies = proxies)
+c = Connection("efoqa_usrname", "efoqa_password", proxies = proxies, server = "prod")
 
 ```
+With optional `server` argument, you can select one of the currently available EMS API servers, which are:
+* "prod" (default)
+* "cluster" (clustered production version)
+* "stable" (stable test version)
+* "beta" 
+* "nightly"
 
 ## Fight Querying
 
 ### Instantiate Query 
 
-
+The following example instantiates a flight-specific query object that will send queries to the EMS 9 system. 
 ```python
 from emspy.query import FltQuery
 
-query = FltQuery(c, ems_name = 'ems9')
+query = FltQuery(c, 'ems9', data_file = 'metadata.db')
 ```
+where optional `data_file` input specifies the SQLite file that will be used to read/write the meta data in the local machine. If there is no file with a specified file name, a new db file will be created. If no file name is passed, it will generate a db file in the default location (emspy/data).
 
-Current limitations:
-- The current query object only support the FDW Flight data source, which seems to be reasonable for POC functionality.
-- Right now a Query object can be instantiated only with a single EMS system connection. I think a Query object with multi-EMS connection could be quite useful for data analysts who want to do study pseudo-global patterns.
-    - Ex) query = Query(c, ems_name = ['ems9', 'ems10', 'ems11']) 
 
 
 ### EMS Database Setup
+The FDW Flights database is one of the frequently used databases. In order to select it as your database for querying, you can simply run the following line.
 
-The EMS system handles with data fields based on a hierarchical tree structure. This field tree manages mappings between names and field IDs as well as the field groups of fields. In order to send query via EMS API, the emsPy package will automatically generate a data file for the static, frequently used part of the field tree and load it as default. This bare field tree includes fields of the following field groups:
+```python
+query.set_database("fdw flights")
+```
 
-* Flight Information (sub-field groups Processing and Profile 16 Extra Data were excluded)
+In EMS system, all databases & data fields are organized in hierarchical tree structures. In order to use a database that is not the FDW Flights, you need to tell the query object where in the EMS DB tree your database is at. The following example specifies the location of one of the Event databases in the DB tree and then set the Event database that you want to use:
+
+```python
+query.update_dbtree("fdw", "events", "standard", "p0")
+query.set_database("p0: library flight safety events")
+```
+
+These code lines first send queries to find the database-groups path, **FDW &rarr; APM Events &rarr; Standard Library Profiles &rarr; P0: Library Flight Safety Events**, and then select the "P0: Library Flight Safety Events" database that is located at the specified path. 
+
+### Data Fields
+Similar to the databases, the EMS data fields are organized in a tree structure so the steps are almost identical except that you use `update_fieldtree(...)` method in order to march through the tree branches.
+
+Before calling the `update_fieldtree(...)`, you can call `update_preset_fieldtree()` method to load a basic tree with fields belonging to the following field groups:
+* Flight Information
 * Aircraft Information
-* Flight Review
-* Data Information
 * Navigation Information
-* Weather Information
 
-In case that you want to query with fields that are not included in this default, stripped-down data tree, you'll have to add the field group where your fields belongs to and update your data field tree. For example, if you want to add a field group branch such as Profiles --> Standard Library Profiles --> Block-Cost Model --> P301: Block-Cost Model Planned Fuel Setup and Tests --> Measured Items --> Ground Operations (before takeoff), the execution of the following method will add the fields and their related subtree structure to the basic tree structure. You can use either the full name or just a fraction of consequtive keywords of each field group. The keyword is case insensitive.
+Let say you have selected the FDW Flights database. The following code lines will query for the meta-data of basic data fields, and then some of the data fields in the Profile 301 in EMS9. 
+
+```python
+# Let the query object load preset data fields that are frequently used
+query.generate_preset_fieldtree()
+
+# Load other data fields that you want to use
+query.update_fieldtree("profiles", "standard", "block-cost", "p301",
+                       "measured", "ground operations (before takeoff)")
+```
+The `update_fieldtree(...)` above queries the meta-data of all measurements located at the path, **Profiles &rarr; Standard Library Profiles &rarr; Block-Cost Model &rarr; P301: Block-Cost Model Planned Fuel Setup and Tests &rarr; Measured Items &rarr;Ground Operations (before takeoff)** in EMS Explorer.
 
 **Caution**: the process of adding a subtree usually requires a very large number of recursive RESTful API calls which take quite a long time. Please try to specify the subtree to as low level as possible to avoid a long processing time.
 
-```python
-query.update_datatree("profiles", "standard", "block-cost", "p301", 
-                      "measured", "ground operations (before takeoff)")
-```
-You can save your data tree for later uses: 
-```python
-## This will replace the default data tree file with the new one and save 
-## at the package root/data
-query.save_datatree()
-```
-If you saved the data tree with default file location, the save data tree will be automatically reloaded when you intantiate a new Query object. 
+As you may noticed in the example codes, you can specify a data entity by the string fraction of its full name. The "key words" of the entity name follows this rule:
+* Case insensitive
+* Keyword can be a single word or multiple consecutive words that are found in the full name string
+* Keyword should uniquely specify a single data entity among all children under their parent database group
+* Regular expression is not supported
 
-In case you want to save the data tree locally, you can call `save_datatreee` method and specify your own choice of a file name with a proper path. For example, the following will save the data tree at your working directory.
+
+### Saving Meta-Data
+Finally, you can save your the meta-data of the database/data trees for later uses. Once you save it, you can go directly call `set_database(...)` without querying the same meta-data for later executions. However, you will have to update trees again if any of the data entities are modified at the EMS-system side.
+
 ```python
-query.save_datatree('my_datatree.pkl')
+# This will save the meta-data into demo.db file, in SQLite format
+query.save_metadata()
 ```
-If you saved the data tree in a local file, you will have to explicitly load the file to reuse the saved datatree.
-```python
-query.load_datatree('my_datatree.pkl')
-```
+
 ### Select
-Let's first go with "select". You can select the EMS data fields by keywords of their names as long as the keyword searches a field. For example, the select method finds you the field "Flight Date (Exact)" by passing three different search approaches:
-- Search by a consecutive substring. The method returns a match with the shortest field name if there are multiple match.
-    - Ex) "flight date"
-- Search by exact name. 
-    - Ex) "flight date (exact)"
-- Field name keyword along with multiple keywords for the names of upstream field groups. 
-    - Ex) ("flight info", "date (exact)")
-
-The keyword is case-insensitive.
-
+As a next step, you will start make an actual query. The `select(...)` method is used to select what will be the columns of the returned data for your query. Following is an example:
 
 ```python
 query.select("flight date", 
@@ -99,13 +118,33 @@ query.select("flight date",
              "takeoff airport iata code")
 ```
 
-You need to make a separate select call if you want to add a field with aggregation applied
+The passed data fields must be part of the data fields in your data tree. 
 
+You need to make a separate select call if you want to add a field with aggregation applied.
 
 ```python
 query.select("P301: duration from first indication of engines running to start", 
              aggregate="avg")
 ```
+Supported aggregation functions are:
+* avg
+* count
+* max
+* min
+* stdev
+* sum
+* var
+
+You may want to define grouping, which is described in the next section, when you want to apply an aggregation function.
+
+`select(...)` method accepts the keywords too, and even a combination of keywords to specify the parent directories of the fields in the data tree. For example, the following keywords are all valid to select "Flight Date (Exact)" for query:
+- Search by a consecutive substring. The method returns a match with the shortest field name if there are multiple match.
+    - Ex) "flight date"
+- Search by exact name. 
+    - Ex) "flight date (exact)"
+- Field name keyword along with multiple keywords for the names of upstream field groups (i.e., directories). 
+    - Ex) ("flight info", "date (exact)")
+
 
 ### Group by & Order by
 Similarly, you can pass the grouping and ordering condition:
@@ -241,7 +280,7 @@ df = query.run()
 
 EMS API supports two different query executions which are regular and async queries. The regular query has a data size limit for the output data, which is 25000 rows. On the other hand, the async query is able to handle large output data by letting you send repeated requests for mini batches of the large output data.
 
-The `run()` method takes care of the repeated async request for a query whose returning data is expected to be large.
+The `run()` method takes care of the repeated async requests for a query whose returning data is expected to be large.
 
 The batch data size for the async request is set 25,000 rows as default (which is the maximum). If you want to change this size,
 ```python
@@ -254,9 +293,9 @@ You can query data of time-series parameters with respect to individual flight r
 
 ```python
 # Flight query with an APM profile. It will return data for 10 flights
-fq = FltQuery(c, "ems9")
-
-fq.load_datatree("stat_taxi_datatree.pkl")
+fq = FltQuery(c, "ems9", "demo.db")
+fq.set_database("fdw flights")
+# If you reuse the meta-data, you don't need to update db/field trees.
 
 fq.select(
   "customer id", "flight record", "airframe", "flight date (exact)",
