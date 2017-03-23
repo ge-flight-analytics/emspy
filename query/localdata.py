@@ -9,7 +9,8 @@ class LocalData:
 	table_info = {
 		"fieldtree": ["ems_id", "db_id", "id", "nodetype", "type", "name", "parent_id" ],
 		"dbtree"   : ["ems_id", "id", "nodetype", "name", "parent_id"],
-	    "kvmaps"   : ["ems_id", "id", "key", "value"]
+	    "kvmaps"   : ["ems_id", "id", "key", "value"],
+	    "params"   : ["ems_id", "id", "name", "description", "units"]
 	    }
 
 

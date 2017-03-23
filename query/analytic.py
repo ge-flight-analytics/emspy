@@ -2,20 +2,35 @@ import pandas as pd
 import numpy as np
 import os, sys, re
 import emspy
+from emspy.query import LocalData
 
 class Analytic:
-	file_name_fmt = os.path.join(emspy.__path__[0], "data", "param_table_ems_id_%d.cpk")
+	metadata = None
 
-	def __init__(self, conn, ems_id, new_data = True):
+	def __init__(self, conn, ems_id, data_file = None):
 		self._conn        = conn
 		self._ems_id      = ems_id
-		if self.__paramfile_exists() and not new_data:
-			self._load_paramtable()
+		self._load_paramtable(data_file)
+
+
+	def _load_paramtable(self, file_name = None):
+		if Analytic.metadata is None:
+			Analytic.metadata = LocalData(file_name)
 		else:
-			self._param_table = pd.DataFrame() 
+			if (file_name is None) and (Analytic.metadata.file_loc() != os.path.abspath(file_name)):
+				Analytic.metadata.close()
+				Analytic.metadata = LocalData(file_name)
+
+		self._param_table = Analytic.metadata.get_data("params", "ems_id = %d" % self._ems_id)
+
+	
+	def _save_paramtable(self, file_name = None):
+		if len(self._param_table) > 0:
+			Analytic.metadata.delete_data("params", "ems_id = %d" % self._ems_id)
+			Analytic.metadata.append_data("params", self._param_table)
 
 
-	def search_param(self, keyword, in_dataframe = False):
+	def search_param(self, keyword, in_df = False):
 		print 'Searching params with keyword "%s" from EMS ...' % keyword,
 		# EMS API Call
 		resp_h, content = self._conn.request( uri_keys=('analytic', 'search'),
@@ -30,8 +45,10 @@ class Analytic:
 			idx          = np.argsort(word_len).tolist()
 			res          = [content[i] for i in idx]
 		print "done."
-		if in_dataframe:
+
+		if in_df:
 			return pd.DataFrame(res)
+		
 		return res
 		
 
@@ -55,23 +72,6 @@ class Analytic:
         # When unique = False
 		return df.to_dict('records')
 
-
-	def _save_paramtable(self, file_name = None):
-		import cPickle as p
-		if file_name is None:
-			file_name = Analytic.file_name_fmt % self._ems_id
-		p.dump(self._param_table, open(file_name, "wb"))
-
-
-	def _load_paramtable(self, file_name = None):
-		import cPickle as p
-		if file_name is None:
-			file_name = Analytic.file_name_fmt % self._ems_id
-		self._param_table = p.load(open(file_name, "rb"))
-
-
-	def __paramfile_exists(self):
-		return os.path.exists(Analytic.file_name_fmt % self._ems_id)
 
 
 
