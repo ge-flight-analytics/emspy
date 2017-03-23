@@ -318,8 +318,8 @@ tsq.select(
   "ground speed (best avail)",
     "egt (left inbd eng)", 
     "egt (right inbd eng)", 
-    "N1 (left inbd eng)", 
-    "N1 (right inbd eng)")
+    "N1 (left inbd eng) (%)", 
+    "N1 (right inbd eng) (%)")
 
 # Run querying multiple flights at once. Start time = 0, end time = 15 mins (900 secs) for all flights. 
 # A better use case is that those start/end times are fed by timepoint measurements of your APM profile.
