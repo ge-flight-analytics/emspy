@@ -5,29 +5,29 @@ import emspy
 from emspy.query import LocalData
 
 class Analytic:
-	metadata = None
 
 	def __init__(self, conn, ems_id, data_file = None):
 		self._conn        = conn
 		self._ems_id      = ems_id
+		self._metadata    = None
 		self._load_paramtable(data_file)
 
 
 	def _load_paramtable(self, file_name = None):
-		if Analytic.metadata is None:
-			Analytic.metadata = LocalData(file_name)
+		if self._metadata is None:
+			self._metadata = LocalData(file_name)
 		else:
-			if (file_name is None) and (Analytic.metadata.file_loc() != os.path.abspath(file_name)):
-				Analytic.metadata.close()
-				Analytic.metadata = LocalData(file_name)
+			if (file_name is None) and (self._metadata.file_loc() != os.path.abspath(file_name)):
+				self._metadata.close()
+				self._metadata = LocalData(file_name)
 
-		self._param_table = Analytic.metadata.get_data("params", "ems_id = %d" % self._ems_id)
+		self._param_table = self._metadata.get_data("params", "ems_id = %d" % self._ems_id)
 
 	
 	def _save_paramtable(self, file_name = None):
 		if len(self._param_table) > 0:
-			Analytic.metadata.delete_data("params", "ems_id = %d" % self._ems_id)
-			Analytic.metadata.append_data("params", self._param_table)
+			self._metadata.delete_data("params", "ems_id = %d" % self._ems_id)
+			self._metadata.append_data("params", self._param_table)
 
 
 	def search_param(self, keyword, in_df = False):
