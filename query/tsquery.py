@@ -113,7 +113,7 @@ class TSeriesQuery(Query):
         return df
 
 
-    def multi_run(self, flight, start = None, end = None, timestep=1.0, timepoint = None, save_file = None):
+    def multi_run(self, flight, start = None, end = None, timestep=None, timepoint = None, save_file = None):
 
         res       = list()
         attr_flag = False
@@ -142,7 +142,7 @@ class TSeriesQuery(Query):
                 i_res['flt_data'] = flight.iloc[i,:].to_dict()
             else:
                 i_res['flt_data'] = {'Flight Record': fr}
-            i_res['ts_data'] = self.run(fr, start[i], end[i], timepoint[i])
+            i_res['ts_data'] = self.run(fr, start[i], end[i], timestep[i])
             res.append(i_res)
 
             if save_file is not None:
