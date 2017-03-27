@@ -31,7 +31,7 @@ class Analytic:
 
 
 	def search_param(self, keyword, in_df = False):
-		print 'Searching params with keyword "%s" from EMS ...' % keyword,
+		print 'Searching for params with keyword "%s" from EMS ...' % keyword,
 		# EMS API Call
 		resp_h, content = self._conn.request( uri_keys=('analytic', 'search'),
 											  uri_args=self._ems_id,
