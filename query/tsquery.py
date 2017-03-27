@@ -55,7 +55,7 @@ class TSeriesQuery(Query):
             self.__analytic._save_paramtable()
 
 
-    def range(self, start, end):
+    def range(self, start = None, end = None):
 
         self.__queryset['start'] = start
         self.__queryset['end']   = end
@@ -67,19 +67,32 @@ class TSeriesQuery(Query):
         self.__queryset['offsets'] = tpoint
 
 
-    def run(self, flight, start = None, end = None, timestep = 1.0, timepoint = None):
+    def run(self, flight, start = None, end = None, timestep = None, timepoint = None):
 
-        if start is None:
-            start = 0.0
+        # if start is None:
+        #     start = 0.0
 
-        if end is None:
-            end = self.flight_duration(flight)
+        # if end is None:
+        #     end = self.flight_duration(flight)
 
-        if timestep is not None:
-            timepoint = np.arange(start, end, timestep)
+        # if timestep is not None:
+        #     timepoint = np.arange(start, end, timestep)
 
+        # if timepoint is not None:
+        #     self.timepoint(timepoint)
+        # else:
+        #     self.range(start, end)
         if timepoint is not None:
             self.timepoint(timepoint)
+
+        elif timestep is not None:
+            start = 0.0 if start is None else start
+
+            if end is None:
+                raise ValueError("End timepoint should be given along with timestep input.")
+
+            self.timepoint(np.arange(start, end+1e-10, timestep))
+
         else:
             self.range(start, end)
 
@@ -140,6 +153,9 @@ class TSeriesQuery(Query):
 
 
     def flight_duration(self, flight, unit = "second"):
+        '''
+        deprecated
+        '''
 
         p = self.__analytic.get_param("hours of data (hours)")
         if p["id"] == "":
