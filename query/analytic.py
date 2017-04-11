@@ -24,7 +24,7 @@ class Analytic:
 		self._param_table = self._metadata.get_data("params", "ems_id = %d" % self._ems_id)
 
 	
-	def _save_paramtable(self, file_name = None):
+	def _save_paramtable(self):
 		if len(self._param_table) > 0:
 			self._metadata.delete_data("params", "ems_id = %d" % self._ems_id)
 			self._metadata.append_data("params", self._param_table)
@@ -46,6 +46,9 @@ class Analytic:
 			res          = [content[i] for i in idx]
 		print "done."
 
+		for i in range(len(res)):
+			res[i]['ems_id'] = self._ems_id
+
 		if in_df:
 			return pd.DataFrame(res)
 		
@@ -55,13 +58,13 @@ class Analytic:
 	def get_param(self, keyword, unique = True):
 		# if the param table is empty, just return an empty param dict.
 		if self._param_table.empty:
-			return dict(id="", name="", description="", units="")
+			return dict(ems_id="", id="", name="", description="", units="")
 		# If the param table is not empty, do search by keyword
 		bool_idx = self._param_table['name'].str.contains(keyword, case = False, regex=False)
 		df = self._param_table[bool_idx]
 		# If the search result is empty, return empty param dict
 		if df.empty:
-			return dict(id="", name="", description="", units="")
+			return dict(ems_id="", id="", name="", description="", units="")
 		# If not empty, return the one with shortest name
 		if df.shape[0] > 1:
 			idx = df['name'].map(lambda x: len(x)).sort_values().index
