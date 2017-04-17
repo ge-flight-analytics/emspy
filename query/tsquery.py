@@ -10,23 +10,23 @@ import numpy as np
 class TSeriesQuery(Query):
 
 
-    def __init__(self, conn, ems_name, new_data = False):
+    def __init__(self, conn, ems_name, data_file = None):
 
         Query.__init__(self, conn, ems_name)
-        self._init_assets(new_data)
+        self._init_assets(data_file)
         self.reset()
 
 
-    def _init_assets(self, new_data):
+    def _init_assets(self, data_file):
 
         # Query._init_assets(self)
-        self.__analytic = Analytic(self._conn, self._ems_id, new_data)
+        self.__analytic = Analytic(self._conn, self._ems_id, data_file)
 
 
     def reset(self):
 
         self.__columns  = list()
-        self.__queryset = dict()
+        self.__queryset = {'select':[]}
 
 
     def select(self, *args):
@@ -39,18 +39,23 @@ class TSeriesQuery(Query):
             prm = self.__analytic.get_param(kw)
             if prm['id'] == "":
                 # If the param's not found, call EMS API
-                res_df = self.__analytic.search_param(kw, in_dataframe = True)
+                res_df = self.__analytic.search_param(kw, in_df = True)
+                res_df['ems_id'] = self._ems_id
                 # The first one is with the shortest name string. Pick that.
                 prm = res_df.iloc[0,:].to_dict()
                 # Add the new parameters to the param table for later uses
                 self.__analytic._param_table = self.__analytic._param_table.append(res_df, ignore_index = True)
                 save_table = True
+
+            # Put the param into JSON query string
+            self.__queryset['select'].append({'analyticId': prm['id']})
+            # Just in case you want to check what params are selected
             self.__columns.append(prm)
         if save_table:
             self.__analytic._save_paramtable()
 
 
-    def range(self, start, end):
+    def range(self, start = None, end = None):
 
         self.__queryset['start'] = start
         self.__queryset['end']   = end
@@ -62,46 +67,53 @@ class TSeriesQuery(Query):
         self.__queryset['offsets'] = tpoint
 
 
-    def run(self, flight, start = None, end = None, timestep = 1.0, timepoint = None):
+    def run(self, flight, start = None, end = None, timestep = None, timepoint = None):
 
-        if start is None:
-            start = 0.0
-        if end is None:
-            end = self.flight_duration(flight)
-        if timestep is not None:
-            timepoint = np.arange(start, end, timestep)
+        # if start is None:
+        #     start = 0.0
 
-        for i, p in enumerate(self.__columns):
-            # Print what is going on:
-            print "\r\x1b[K%d/%d: %s" % (i+1, len(self.__columns), p['name']),
-            
-            if timepoint is not None:
-                self.timepoint(timepoint)
-            else:
-                self.range(start, end)
-            
-            q           = self.__queryset.copy()
-            q['select'] = [{'analyticId': p['id']}]
-           
-            resp_h, content = self._conn.request( uri_keys = ("analytic", "query"),
-                                                  uri_args = (self._ems_id, flight),
-                                                  jsondata = q)
-            if content.has_key('message'):
-                sys.exit('API query for flight %d, parameter = "%s" was unsuccessful.\nHere is the message from API: %s' % (flight, p['name'], content['message']))
-            
-            if i == 0:
-                df = pd.DataFrame({"Time (sec)": content['offsets']})
-                df[p['name']] = content['results'][0]['values']
-            else:
-                df1 = pd.DataFrame({"Time (sec)": content['offsets']})
-                df1[p['name']] = content['results'][0]['values']  
-                df  = pd.merge(df, df1, how = "outer", on="Time (sec)", sort= True)
+        # if end is None:
+        #     end = self.flight_duration(flight)
+
+        # if timestep is not None:
+        #     timepoint = np.arange(start, end, timestep)
+
+        # if timepoint is not None:
+        #     self.timepoint(timepoint)
+        # else:
+        #     self.range(start, end)
+        if timepoint is not None:
+            self.timepoint(timepoint)
+
+        elif timestep is not None:
+            start = 0.0 if start is None else start
+
+            if end is None:
+                raise ValueError("End timepoint should be given along with timestep input.")
+
+            self.timepoint(np.arange(start, end+1e-10, timestep))
+
+        else:
+            self.range(start, end)
+
+        resp_h, content = self._conn.request( uri_keys = ("analytic", "query"),
+                                              uri_args = (self._ems_id, flight),
+                                              jsondata = self.__queryset)
+
+        if content.has_key('message'):
+            sys.exit('API query for flight %d was unsuccessful.\nHere is the message from API: %s' % (flight, content['message']))
         
-        print "\r\x1b[K",
+        # Put the data in Pandas DataFrame
+        df = pd.DataFrame({"Time (sec)": content['offsets']})
+
+        for i, prm in enumerate(self.__columns):
+            df[prm['name']] = content['results'][i]['values']
+
+        ## "\r\x1b[K" is overwrite print.
         return df
 
 
-    def multi_run(self, flight, start = None, end = None, timestep=1.0, timepoint = None, save_file = None):
+    def multi_run(self, flight, start = None, end = None, timestep=None, timepoint = None, save_file = None):
 
         res       = list()
         attr_flag = False
@@ -124,26 +136,30 @@ class TSeriesQuery(Query):
 
         print('\n=== Start running time-series data querying for %d flights ===\n' % len(FR))
         for i, fr in enumerate(FR):
-            print '%d / %d: FR %d' % (i+1, len(FR), fr)
+            print '\r\x1b[K%d / %d: FR %d' % (i+1, len(FR), fr),
             i_res = dict()
             if attr_flag:
                 i_res['flt_data'] = flight.iloc[i,:].to_dict()
             else:
                 i_res['flt_data'] = {'Flight Record': fr}
-            i_res['ts_data'] = self.run(fr, start[i], end[i], timepoint[i])
+            i_res['ts_data'] = self.run(fr, start[i], end[i], timestep[i])
             res.append(i_res)
 
             if save_file is not None:
                 cPickle.dump(res, open(save_file, 'wb'))
+        print 'Done'
 
         return res
 
 
     def flight_duration(self, flight, unit = "second"):
+        '''
+        deprecated
+        '''
 
         p = self.__analytic.get_param("hours of data (hours)")
         if p["id"] == "":
-            res_df = self.__analytic.search_param("hours of data (hours)", in_dataframe = True)
+            res_df = self.__analytic.search_param("hours of data (hours)", in_df = True)
             p      = res_df.iloc[0].to_dict()
             self.__analytic._param_table = self.__analytic._param_table.append(res_df, ignore_index = True)
             self.__analytic._save_paramtable()

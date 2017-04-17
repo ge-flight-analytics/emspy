@@ -1,6 +1,6 @@
-import json, urllib, urllib2, sys, StringIO, gzip
+import json, urllib, urllib2, ssl, sys, StringIO, gzip
 import pprint as pp
-from common import *
+import common
 
 
 
@@ -8,14 +8,23 @@ class Connection:
 	'''
 	Object for connection to EMS API
 	'''
+	def __init__(self, user=None, pwd=None, proxies=None, verbose=False, ignore_ssl_errors=False, server="prod", server_url=None):
 
-	def __init__(self, user=None, pwd=None, proxies=None, verbose=False):
 		self.__user 		= user
 		self.__pwd  		= pwd
 		self.__proxies      = proxies
 		self.__ntrials      = 0
+		self.__uri_root     = None
+		self.__ignore_ssl_errors = ignore_ssl_errors
 		self.token 			= None
 		self.token_type 	= None
+
+		# We assign the uri root to a member variable up front, and use that everywhere to
+		# simplify. In order to use an alternate uri root, it must be specified in the constructor.
+		if server_url is not None:
+			self.__uri_root = server_url
+		else:
+			self.__uri_root = common.uri_root[server]
 
 		if (user is not None) and (pwd is not None):
 			self.connect(user, pwd, proxies, verbose)
@@ -70,7 +79,7 @@ class Connection:
 
 		# If uri_keys are given, find the uri from the uris dictionary
 		if uri_keys is not None:
-			uri    = uri_root + uris[uri_keys[0]][uri_keys[1]]
+			uri    = self.__uri_root + common.uris[uri_keys[0]][uri_keys[1]]
 
 		# Provide the input to the request
 		if uri_args is not None:
@@ -94,18 +103,24 @@ class Connection:
 			headers['Content-Type'] = 'application/json'
 			data = json.dumps(jsondata)
 
+
 		req = urllib2.Request(uri, data=data, headers=headers)
 		try:
-			resp = urllib2.urlopen(req)
+			resp = self.__send_request(req)
 			statcode = resp.getcode()
 			if statcode!=200:
 				print("Http status code: %d" % statcode)
 				verbose = True
 		except:
+			(eType, eValue, eTrace) = sys.exc_info()
+			if eType is ssl.CertificateError:
+				print("A certificate verification error occured for the request to '%s'. Certificate verification is required by default, but can be disabled by using the ignore_ssl_errors argument for the Connection constructor." % uri )
+				raise
+
 			print("Trying to reconnect the EMS API.")
 			self.reconnect()
 			print("Done.")
-			resp = urllib2.urlopen(req)
+			resp = self.__send_request(req)
 		resp_h   = resp.info().headers
 
 		# If the response is compressed, decompress it.
@@ -124,8 +139,16 @@ class Connection:
 		return resp_h, content
 
 
+	def __send_request(self, req):
+		"""Sends the request and returns the response, optionally ignoring ssl errors."""
+
+		# Normally you do NOT want to ignore SSL errors, but this is
+		# sometimes necessary on beta API endpoints wihtout a proper cert.
+		return urllib2.urlopen(req,
+							   context = ssl._create_unverified_context() if self.__ignore_ssl_errors else None)
+
+
 def print_resp(resp):
 	
 	for r in resp:
 		pp.pprint(r)
-

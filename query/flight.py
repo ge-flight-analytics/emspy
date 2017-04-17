@@ -1,30 +1,336 @@
+from emspy.query import LocalData
+
 import networkx as nx
+import pandas as pd
 import os, sys, re
-import emspy
+
 
 class Flight:
+    temp_exclude = ['Download Information', 'Download Review', 'Processing',
+                    'Profile 16 Extra Data', 'Flight Review', 'Data Information',
+                    'Operational Information', 'Operational Information (ODW2)',
+                    'Weather Information', 'Profiles', 'Profile']
 
-    temp_exclude = ['Download Information','Download Review','Processing',
-                    'Profile 16 Extra Data','Operational Information',
-                    'Operational Information (ODW2)','Profiles']
-    save_file_fmt = os.path.join(emspy.__path__[0],"data","FDW_flt_data_tree_ems_id_%s.cpk")
 
-    def __init__(self, conn, ems_id, new_data = False):
+    def __init__(self, conn, ems_id, data_file=None):
 
-        self._conn   = conn
+        self._conn = conn
         self._ems_id = ems_id
-        self._tree   = None
+        self._db_id  = None
+        self._metadata = None
+        self._trees  = {'fieldtree': None, 'dbtree': None, 'kvmaps': None}
         self._fields = []
-        self.__cntr  = 0
-        self._key_maps = dict()
-        
-        if self.__treefile_exists() and not new_data:
-            self.load_tree()
+        self.__cntr = 0
+
+        # Retreive the field tree data from local storage. If it doesn't exist, generate a new
+        # default one.
+        self.load_tree(data_file)
+        # Set default database      
+        # self.set_database('fdw flight')
+
+    def load_tree(self, file_name=None):
+
+        if self._metadata is None:
+            self._metadata = LocalData(file_name)
         else:
-            print("No file found for default data-field tree. Will start generating one...")
-            self.generate_tree()
-            print("done.")
-        self.__database  = self.get_database()
+            if (file_name is not None) and (self._metadata.file_loc() != os.path.abspath(file_name)):
+                self._metadata.close()
+                self._metadata = LocalData(file_name)
+
+        self._trees = {'fieldtree': self.__get_fieldtree(), 
+                       'dbtree'   : self.__get_dbtree(),
+                       'kvmaps'   : self.__get_kvmaps()}
+
+
+    def save_tree(self, file_name=None):
+
+        from shutil import copyfile
+        ld = self._metadata
+        if (file_name is not None) and (ld.file_loc() != os.path.abspath(file_name)):
+            # A new file location is given, copy all the data in the current file with new file name,
+            # and save the currently loaded tree data into the new file too.
+            copyfile(self._metadata.file_loc(), file_name)
+            self._metadata.close()
+            self._metadata = LocalData(file_name)
+        
+        self.__save_fieldtree()
+        self.__save_dbtree()
+        self.__save_kvmaps()
+
+
+
+    def __get_fieldtree(self):
+        if self._db_id is None:
+            return pd.DataFrame(columns=self._metadata.table_info['fieldtree'])
+        else:
+            return self._metadata.get_data("fieldtree","ems_id = %d and db_id = '%s'" % (self._ems_id, self._db_id))
+
+
+    def __save_fieldtree(self):
+        if len(self._trees['fieldtree']) > 0:
+            self._metadata.delete_data("fieldtree", "ems_id = %d and db_id = '%s'" % (self._ems_id, self._db_id))
+            self._metadata.append_data("fieldtree", self._trees['fieldtree'])
+
+
+    def __get_dbtree(self):
+        T = self._metadata.get_data("dbtree", "ems_id = %d" % self._ems_id)
+        if len(T) < 1:
+            dbroot = {'ems_id': self._ems_id,
+                      'id': "[-hub-][entity-type-group][[--][internal-type-group][root]]",
+                      'name': "<root>",
+                      'nodetype': "root",
+                      'parent_id': None}
+            self._trees['dbtree'] = pd.DataFrame([dbroot])
+            self.__update_children(dbroot, treetype = "dbtree")
+            self.update_tree("fdw", treetype = "dbtree", exclude_tree = ["APM Events"])
+            self.__save_dbtree()
+            T = self._trees['dbtree']
+        return T
+
+
+    def __save_dbtree(self):
+        if len(self._trees['dbtree']) > 0:
+            self._metadata.delete_data("dbtree", "ems_id = %d" % self._ems_id)
+            self._metadata.append_data("dbtree", self._trees['dbtree'])        
+
+
+    def __get_kvmaps(self):
+        T = self._metadata.get_data("kvmaps", "ems_id = %d" % self._ems_id)
+        return T
+
+
+    def __save_kvmaps(self):
+        if len(self._trees['kvmaps']) > 0:
+            self._metadata.delete_data("kvmaps", "ems_id = %d" % self._ems_id)
+            self._metadata.append_data("kvmaps", self._trees['kvmaps'])     
+
+
+    def set_database(self, name):
+
+        tr = self._trees['dbtree']
+        self._db_id = tr[(tr.nodetype == 'database') & tr.name.str.contains(treat_spchar(name), case=False)]['id'].values[0]
+        self._trees['fieldtree'] = self.__get_fieldtree()
+        self.__update_children(self.get_database(), treetype = "fieldtree")
+
+        print("Using database '%s'." % self.get_database()['name'])
+		
+
+    def get_database(self):
+
+        tr = self._trees['dbtree']
+        return tr[(tr.nodetype=="database") & (tr.id == self._db_id)].iloc[0].to_dict()
+
+
+
+    def __db_request(self, parent):
+        body = None
+        if parent['nodetype'] == "database_group":
+            body = {'groupId': parent['id']}
+        resp_h, d = self._conn.request(uri_keys=('database', 'group'),
+                                       uri_args=self._ems_id,
+                                       body=body)
+        d1 = []
+        if len(d['databases']) > 0:
+            d1 = map(lambda x: {'ems_id': parent['ems_id'],
+                                'id': x['id'],
+                                'nodetype': 'database',
+                                'name': x['pluralName'],
+                                'parent_id': parent['id']}, d['databases'])
+        d2 = []
+        if len(d['groups']) > 0:
+            d2 = map(lambda x: {'ems_id': parent['ems_id'],
+                                'id': x['id'],
+                                'nodetype': 'database_group',
+                                'name': x['name'],
+                                'parent_id': parent['id']}, d['groups'])
+        return d1, d2
+
+    
+    def __fl_request(self, parent):
+        body = None
+        if parent['nodetype'] == "field_group":
+            body = {'groupId': parent['id']}
+        resp_h, d = self._conn.request(uri_keys=('database', 'field_group'),
+                                       uri_args=(self._ems_id, self._db_id),
+                                       body=body)
+        d1 = []
+        if len(d['fields']) > 0:
+            d1 = map(lambda x: {'ems_id': parent['ems_id'],
+                                'db_id' : self._db_id,
+                                'id': x['id'],
+                                'nodetype': 'field',
+                                'type': x['type'],
+                                'name': x['name'],
+                                'parent_id': parent['id']}, d['fields'])
+        d2 = []
+        if len(d['groups']) > 0:
+            d2 = map(lambda x: {'ems_id': parent['ems_id'],
+                                'db_id': self._db_id,
+                                'id': x['id'],
+                                'nodetype': 'field_group',
+                                'type': None,
+                                'name': x['name'],
+                                'parent_id': parent['id']}, d['groups'])
+        return d1, d2
+
+    
+    def __add_subtree(self, parent, exclude_tree=[], treetype = 'fieldtree'):
+
+        print("On " + parent['name'] + "(" + parent['nodetype'] + ")" + "...")
+
+        if treetype=="dbtree":
+            searchtype = 'database'
+            d1, d2 = self.__db_request(parent)
+                
+        else:
+            searchtype = "field"
+            d1, d2 = self.__fl_request(parent)
+
+        if len(d1) > 0:
+            self._trees[treetype] = self._trees[treetype].append(d1, ignore_index=True)
+            plural = "s" if len(d1) > 1 else ""
+            print("-- Added %d %s%s" % (len(d1), searchtype, plural))
+
+        for x in d2:
+            self._trees[treetype] = self._trees[treetype].append(x, ignore_index=True)
+            if len(exclude_tree) > 0:
+                if all([y not in x['name'] for y in exclude_tree]):
+                    self.__add_subtree(x, exclude_tree, treetype)
+            else:
+                self.__add_subtree(x, exclude_tree, treetype)
+
+
+    def __get_children(self, parent_id, treetype='fieldtree'):
+        tr = self._trees[treetype]
+        # tr = tr[tr.nodetype != ('field' if treetype=='fieldtree' else 'dbtree')]
+
+        if isinstance(parent_id, (list, tuple, pd.Series)):
+            return tr[tr.parent_id.isin(parent_id)]
+        return tr[tr.parent_id == parent_id]
+
+
+    def __remove_subtree(self, parent, treetype = 'fieldtree'):
+        tr = self._trees[treetype]
+        chld = tr[tr.parent_id == parent['id']]
+
+        # Update the instance tree by deleting children
+        self._trees[treetype] = tr[tr.parent_id != parent['id']]
+
+        # Iterate and do recursive removal of children of children
+        leaftype = 'field' if treetype=='fieldtree' else 'database'
+        for i, x in chld[chld.nodetype!=leaftype].iterrows():
+            self.__remove_subtree(x, treetype = treetype)
+
+    
+    # def __remove_subtree(self, parent, rm_parent=True, treetype='fieldtree'):
+
+    #     rm_list = list()
+    #     if rm_parent:
+    #         rm_list.append(parent['id'])
+    #     parent_id = [parent['id']]
+
+    #     cntr = 0
+    #     while len(parent_id) > 0:
+    #         child_id = self.__get_children(parent_id, treetype=treetype)['id'].tolist()
+    #         rm_list += child_id
+    #         parent_id = child_id
+    #         cntr += 1
+    #         if cntr > 1e4:
+    #             sys.exit("Something's wrong. Subtree removal went over 10,000 iterations.")
+    #     if len(rm_list) > 0:
+    #         tr = self._trees[treetype]
+    #         self._trees[treetype] = tr[~tr.id.isin(rm_list)]
+    #         print("Removed the subtree of %s (%s) with total of %d nodes (fields/databases/groups)." % (
+    #             parent['name'], parent['nodetype'], len(rm_list)))
+
+
+    
+    def __update_children(self, parent, treetype='fieldtree'):
+        '''
+        This function updates the direct children of a parent node.
+        '''
+        print("On " + parent['name'] + "(" + parent['nodetype'] + ")" + "...")
+
+        if treetype=="dbtree":
+            searchtype = 'database'
+            d1, d2 = self.__db_request(parent)
+                
+        else:
+            searchtype = "field"
+            d1, d2 = self.__fl_request(parent)
+
+        T = self._trees[treetype]
+        self._trees[treetype] = T[~((T.nodetype == searchtype) & (T.parent_id == parent['id']))]
+
+        if len(d1) > 0:
+            self._trees[treetype] = self._trees[treetype].append(d1, ignore_index=True)
+            plural = "s" if len(d1) > 1 else ""
+            print("-- Added %d %s%s" % (len(d1), searchtype, plural))
+        
+        # If there is an array of groups as children add any that appeared new and remove who does not.
+        old_groups = T[(T.nodetype == '%s_group' % searchtype) & (T.parent_id == parent['id'])]
+        old_ones = old_groups["id"].tolist()
+        new_ones = [x['id'] for x in d2]
+
+        rm_id = listdiff(old_ones, new_ones)
+        if len(rm_id) > 0:
+            [self.__remove_subtree(x.to_dict(), treetype=treetype) for i, x in old_groups.iterrows() if x['id'] in rm_id]
+
+        add_id = listdiff(new_ones, old_ones)
+        if len(add_id) > 0:
+            self._trees[treetype] = self._trees[treetype].append([x for x in d2 if x['id'] in add_id])
+        
+
+
+    def update_tree(self, *args, **kwargs):
+        '''
+        Optional arguments
+        ------------------
+
+        treetype : 
+            "fieldtree" or "dbtree"
+
+        exclude_tree:
+            Exact name strings (case sensitive) of the field groups you don't want to search through
+            Ex. ['Profiles', 'Weather Information']
+        '''
+        treetype     = kwargs.get("treetype", "fieldtree")
+        exclude_tree = kwargs.get("exclude_tree", [])
+        searchtype   = "field" if treetype == "fieldtree" else "database"
+
+        if treetype not in ("fieldtree", "dbtree"):
+            raise ValueError("treetype = '%s': there is no such data table." % treetype)
+
+        fld_path = [s.lower() for s in args]
+
+        for i, p in enumerate(fld_path):
+            p = treat_spchar(p)
+            if i == 0:
+                T = self._trees[treetype]
+                parent = T[T.name.str.contains(p, case=False)]
+            else:
+                self.__update_children(parent, treetype=treetype)
+                chld_df = self.__get_children(parent['id'], treetype= treetype)
+                child = chld_df[chld_df.name.str.contains(p, case=False)]
+                parent = child
+            if len(parent) == 0:
+                raise ValueError("Search keyword '%s' did not return any %s group." % (p, searchtype))
+            ptype  = "%s_group" % searchtype    
+            parent = parent[parent.nodetype == ptype]    
+            parent = get_shortest(parent)
+
+        print "=== Starting to update subtree from '%s (%s)' ===" % (parent['name'], parent['nodetype'])
+        self.__remove_subtree(parent, treetype=treetype)
+        
+        self.__add_subtree(parent, exclude_tree, treetype=treetype)
+
+
+
+    def make_default_tree(self):
+        dbnode = self.get_database()
+        self.__remove_subtree(dbnode, treetype="fieldtree")
+        self.__add_subtree(self.get_database(), exclude_tree=Flight.temp_exclude, treetype='fieldtree')
+        # self.update_tree(self.get_database()['name'], exclude_tree=Flight.temp_exclude, treetype='fieldtree')
 
 
     def search_fields(self, *args, **kwargs):
@@ -40,297 +346,104 @@ class Flight:
 
         unique = kwargs.get("unique", True)
 
-        res = []
-        g   = self._tree
+        res = pd.DataFrame()
 
         for f in args:
             if type(f) is tuple and len(f) > 1:
-                f = [x.lower() for x in f]
-                node_id = [n[0] for n in g.nodes_iter(data=True)\
-                          if n[1]['nodetype']=='field_group' and f[0] in n[1]['name'].lower()]
-                for kwd in f[1:]:
-                    tn = []
-                    for i in node_id:
-                        tn += [n for n in g.successors(i) if kwd in g.node[n]['name'].lower()]
-                    node_id = tn                    
-                fres = [(g.node[n]['name'], g.node[n]) for n in node_id]
+                # If the given keyword is a tuple, search through the tree
+                chld = self._trees['fieldtree']
+                for i, ff in enumerate(f):
+                    ff = treat_spchar(ff)
+                    parent_id = chld[chld.name.str.contains(ff, case=False)]['id'].tolist()
+                    if i < (len(f)-1):
+                        chld = chld[chld.parent_id.isin(parent_id)]
+                    else:
+                        chld = chld[(chld.nodetype == "field") & chld.name.str.contains(ff, case=False)]
+                fres = chld
             else:
-                f = f.lower()
-                fres = [(n[1]['name'], n[1]) for n in g.nodes_iter(data=True)\
-                        if n[1]['nodetype']=='field' and f in n[1]['name'].lower()]
-            if len(fres)!=0:
+                # Simple keyword search
+                T = self._trees['fieldtree']
+                fres = T[(T.nodetype == "field") & T.name.str.contains(treat_spchar(f), case=False)]
+
+            if fres.shape[0] == 0:
+                # No returned value. Raise error.
+                raise ValueError("No field found with field keyword %s." % f)
+            elif fres.shape[0] > 1:
                 if unique:
-                    res.append(get_shortest(fres)) 
-                else:
-                    res += fres
-            else:
-                raise ValueError("Nothing with Field keyword '%s' was found in the EMS." % f)
-        if len(res) == 0: res = None
-        elif len(res) == 1: res = res[0]
+                    # If more than one value returned, choose one with the shortest name.
+                    fres = get_shortest(fres)
+            res = res.append(fres, ignore_index=True)
+
+        # Convert the search result to a list of dicts
+        res = [x[1].to_dict() for x in res.iterrows()]
         return res
 
-    
-    def list_allvalues(self, field=None, field_id = None, in_dict=False):
+    def list_allvalues(self, field=None, field_id=None, in_dict=False, in_df=False):
         '''
         List all available values for a discrete field. Will raise error if the type of
         a given field is not discrete.
         '''
         if field_id is None:
-            fld = self.search_fields(field)
-            fld_type = fld[1]['type']
-            fld_id   = fld[1]['id']
+            fld = self.search_fields(field)[0]
+            fld_type = fld['type']
+            fld_id = fld['id']
             if fld_type != 'discrete':
                 sys.exit("Queried field should be discrete to get the list of possible values.")
         else:
             fld_id = field_id
 
-        if self._key_maps.has_key(fld_id):
-            kmap = self._key_maps[fld_id]
-        else:
-            db_id = self.get_database()['id']
+        T = self._trees['kvmaps']
+        kmap = T[(T.ems_id == self._ems_id) & (T.id == fld_id)]
+
+        if len(kmap) == 0:
             print("Getting key-value mappings from API. (Caution: runway ID takes much longer)")
 
-            resp_h, content = self._conn.request( uri_keys=('database','field'),
-                                                  uri_args=(self._ems_id, db_id, fld_id))
-            aa = content['discreteValues']
-            kmap = dict()
-            # The keys are returned as string, but they'd better be integers. Change them
-            # to integers
-            for k,v in aa.items():
-                kmap[int(k)] = v
-            self._key_maps[fld_id] = kmap
+            resp_h, content = self._conn.request(uri_keys=('database', 'field'),
+                                                 uri_args=(self._ems_id, self._db_id, fld_id))
+            km = content['discreteValues']
+            kmap = pd.DataFrame({'ems_id': self._ems_id,
+                                 'id': fld_id,
+                                 'key': km.keys(),
+                                 'value': km.values()})
+            kmap['key'] = pd.to_numeric(kmap['key'])
+
+            self._trees['kvmaps'] = self._trees['kvmaps'].append(kmap, ignore_index=True)
+            self.__save_kvmaps()
 
         if in_dict:
-            return kmap
+            res = dict()
+            for i, r in kmap.iterrows():
+                res[r['key']] = r['value']
+            return res
 
-        return kmap.values()
+        if in_df:
+            return kmap[['key', 'value']]
+        return kmap['value'].tolist()
 
-
-    def get_value_id(self, value, field=None, field_id = None):
+    def get_value_id(self, value, field=None, field_id=None):
         '''
         Return the key (Id) of the values of a discrete field.
         '''
-        val_map = self.list_allvalues(field=field, field_id=field_id, in_dict=True)
-        for k, v in val_map.iteritems():
-            if v == value:
-                return int(k)
-        else:
+        kvmap = self.list_allvalues(field=field, field_id=field_id, in_df=True)
+        key = kvmap[kvmap.value == value]['key']
+
+        if len(key) == 0:
             raise ValueError("%s could not be found from the list of the field values." % value)
-
-
-    def get_database(self):
-
-        for n in self._tree.nodes_iter():
-            if self._tree.node[n]['nodetype'] == 'database':
-                return self._tree.node[n]
-        return None
-
-
-    def generate_tree(self):
-
-        print("==== Start generating default data-field tree ====")
-        # New tree
-        self._tree = nx.DiGraph()
-        
-        # Find source id of FDW Flight and put it as root of tree
-        resp_h, d = self._conn.request(
-            uri_keys = ('database','group'), 
-            uri_args = self._ems_id
-            )
-        for x in d['groups']:
-            if x['name'] == 'FDW':
-                fdw = x
-                break
-        resp_h, d = self._conn.request(
-            uri_keys = ('database','group'),
-            uri_args = self._ems_id,
-            body     = {'groupId': fdw['id']}
-            )
-        for x in d['databases']:
-            if x['singularName'] == "FDW Flight":
-                fdw_flt             = x
-                fdw_flt['name']     = fdw_flt['singularName']
-                fdw_flt['nodetype'] = 'database'
-                break
-        self._tree.add_node(fdw_flt['id'], attr_dict=fdw_flt)
-
-        # Cache the data source node reference just for convenience
-        self.__database = self.get_database()
-
-        # Add rest of the fields/groups recursively
-        self.__add_subtree(fdw_flt)  
-        # Final save
-        self.save_tree()
-
-
-    def update_tree(self, *args):
-        
-        grp_path = [s.lower() for s in args]
-        G = self._tree
-
-        for i, p in enumerate(grp_path):
-            if i == 0:
-                parent = [ G.node[n] for n in G.nodes_iter() \
-                                    if re.search(p, G.node[n]['name'].lower()) or\
-                                       p in G.node[n]['name'].lower() ]     
-            else:
-                self.__update_children(parent)
-                parent = [ G.node[n] for n in G.successors(parent['id']) \
-                                    if re.search(p, G.node[n]['name'].lower()) or\
-                                       p in G.node[n]['name'].lower() ]
-            if len(parent) == 0:
-                raise ValueError("Search keyword '%s' did not return any field group." % args[i])
-            parent = get_shortest(parent)
-
-        print "=== Starting to update subtree from '%s' ===" % parent['name']
-        self.__remove_subtree(parent, rm_parent=False)
-        self.__add_subtree(parent)
-
-
-
-    def save_tree(self, file_name = None):
-
-        import cPickle as p
-
-        if file_name is None: 
-            file_name = Flight.save_file_fmt % self._ems_id
-        p.dump(self._tree, open(file_name, "wb"))
-
-
-    def load_tree(self, file_name = None):
-
-        import cPickle as p
-
-        if file_name is None: 
-            file_name = Flight.save_file_fmt % self._ems_id
-        self._tree = p.load(open(file_name, "rb"))
-
-
-    def __add_subtree(self, parent):
-
-        # Temp patch. save the tree for every 10 recursive calls
-        # self.__cntr += 1
-        # if self.__cntr >= 50:
-        #     self.save_tree() 
-        #     self.__cntr = 0
-
-        print("On " + parent['name'] + "...")
-        body = None
-        if parent['nodetype'] == 'field_group':
-            body = {'groupId': parent['id']}
-
-        resp_h, d = self._conn.request(uri_keys = ('database','field_group'),
-                                       uri_args = (self._ems_id, self.__database['id']),
-                                       body = body
-                                       )
-        if len(d['fields']) > 0:
-            for x in d['fields']: 
-                x['nodetype'] = 'field'
-            self._tree.add_nodes_from([ (x['id'], x) for x in d['fields'] ])
-            self._tree.add_edges_from([ (parent['id'], x['id']) for x in d['fields'] ])
-            plural = "s" if len(d['fields']) > 1 else ""
-            print("-- Added %d field%s" % (len(d['fields']), plural))
-
-
-        if len(d['groups']) > 0:
-            for x in d['groups']:
-                x['nodetype'] = 'field_group'
-                self._tree.add_node(x['id'], attr_dict = x)
-                self._tree.add_edge(parent['id'], x['id'])
-                # Temp patch: exclude less usefule field group to save request calls
-                if x['name'] not in Flight.temp_exclude:
-                    self.__add_subtree(x)
-
-
-    def __remove_subtree(self, parent, rm_parent = True):
-        
-        subtree_nodes = nx.descendants(self._tree, parent['id'])
-        if rm_parent:
-            subtree_nodes.add(parent['id'])
-        if len(subtree_nodes) == 0:
-            # Do nothing and leave if there is no node to remove
-            return None
-        print('Removing all fields and groups under "%s"...' % parent['name'])
-        self._tree.remove_nodes_from(subtree_nodes)
-        print("Done")
-        
-
-
-    def __update_children(self, parent):
-        
-        # If node type is "field_group", pass the field group id to the GET request to get the
-        # field-group specific information.
-        body = None
-        if parent['nodetype'] == 'field_group':
-            body = {'groupId': parent['id']}
-
-        resp_h, d = self._conn.request(uri_keys = ('database','field_group'),
-                                       uri_args = (self._ems_id, self.__database['id']),
-                                       body = body)
-        # For the fields, simply remove and re-create the children fields as an update
-        old_fld = [n for n in self._tree.successors(parent['id']) \
-                    if self._tree.node[n]['nodetype'] == 'field']
-        self._tree.remove_nodes_from(old_fld)
-        if len(d['fields']) > 0:
-            for x in d['fields']: 
-                x['nodetype'] = 'field'
-            self._tree.add_nodes_from([ (x['id'], x) for x in d['fields'] ])
-            self._tree.add_edges_from([ (parent['id'], x['id']) for x in d['fields'] ])
-            
-        # If there is an array of field group as children add them to the tree and call the function
-        # recursively until reaches the fields (leaves).
-        if len(d['groups']) > 0:
-            for x in d['groups']:
-                x['nodetype'] = 'field_group'
-            old         = [n for n in self._tree.successors(parent['id']) 
-                                if self._tree.node[n]['nodetype'] == 'field_group']
-            new         = [n['id'] for n in d['groups']]
-            id_to_rm    = listdiff(old, new)
-            [self.__remove_subtree(n) for n in id_to_rm]
-            id_to_add   = listdiff(new, old)
-            self._tree.add_nodes_from([ (x['id'], x) for x in d['groups'] if x['id'] in id_to_add ])
-            self._tree.add_edges_from([ (parent['id'], x) for x in id_to_add ])
-
-
-
-    def __treefile_exists(self):
-
-        return os.path.exists(Flight.save_file_fmt % self._ems_id)
-
-
-def name_only(fields):
-
-    if type(fields[0]) == dict:
-        return [f['name'] for f in fields]
-    elif type(fields[0]) in [tuple, list]:
-        return [f[0] for f in fields]
+        return int(key.values[0])
 
 
 def get_shortest(fields):
-
-    names = name_only(fields)
-    l = [len(n) for n in names]
-    return fields[l.index(min(l))]
+    if isinstance(fields, pd.DataFrame) is False:
+        sys.exit("Input should be a Pandas dataframe.")
+    return fields.loc[fields.name.str.len().argmin()].to_dict()
 
 
 def listdiff(a, b):
     return [x for x in a if x not in b]
 
 
-# def search_in_graph(G, **kwargs):
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+def treat_spchar(s):
+    sp_chr = ("." ,"^" ,"(" ,")" ,"[" ,"]" ,"{", "}","<", ">","-", "+", "?", "!", "*", "$", "|", "&","%")
+    for x in sp_chr:
+        s = s.replace(x, "\\"+x)
+    return s

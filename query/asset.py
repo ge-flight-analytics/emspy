@@ -37,9 +37,9 @@ class Asset:
 
 		if type(val)==str:			
 			if searchtype=="contain":
-				return a[a[col].str.contains(val, na=False)]
+				return a[a[col].str.contains(val, na=False, case=False)]
 			if searchtype=="match":
-				return a[a[col].str.match(val)]
+				return a[a[col].str.match(val, case=False)]
 		
 		return a[a[col]==val]
 

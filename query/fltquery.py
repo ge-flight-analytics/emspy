@@ -8,17 +8,27 @@ import sys, json
 class FltQuery(Query):
 
 
-	def __init__(self, conn, ems_name, new_data = False):
+	def __init__(self, conn, ems_name, data_file = None):
 
 		Query.__init__(self, conn, ems_name)
-		self._init_assets(new_data)
+		self._init_assets(data_file)
 		self.reset()
 
 	
-	def _init_assets(self, new_data):
+	def _init_assets(self, data_file):
 
 		# Query._init_assets(self)
-		self.__flight = Flight(self._conn, self._ems_id, new_data)
+		self.__flight = Flight(self._conn, self._ems_id, data_file)
+
+
+	def set_database(self, name):
+		
+		self.__flight.set_database(name)
+
+
+	def get_database(self):
+		
+		return self.__flight.get_database()
 
 
 	def reset(self):
@@ -60,7 +70,7 @@ class FltQuery(Query):
 
 		for field in fields:
 			d = {}
-			d['fieldId'] = field[1]['id']
+			d['fieldId'] = field['id']
 			d['aggregate'] = aggregate
 			self.__queryset['select'].append(d)
 			self.__columns.append(field)
@@ -69,7 +79,7 @@ class FltQuery(Query):
 	def group_by(self, *args):
 		'''Functionally equivalent to SQL's groupby'''
 		for field in self.__flight.search_fields(*args):
-			self.__queryset['groupBy'].append({'fieldId': field[1]['id']})
+			self.__queryset['groupBy'].append({'fieldId': field['id']})
 
 
 	def order_by(self, field, order='asc'):
@@ -77,7 +87,7 @@ class FltQuery(Query):
 		if order not in ['asc', 'desc']:
 			sys.exit("Ordering option must be one of %s." % ['asc', 'desc'])
 		self.__queryset['orderBy'].append({
-			'fieldId': self.__flight.search_fields(field)[1]['id'],
+			'fieldId': self.__flight.search_fields(field)[0]['id'],
 			'order': order,
 			'aggregate': 'none'})
 
@@ -124,10 +134,10 @@ class FltQuery(Query):
 			x = eval(s)
 
 			if i == 0:
-				fld = self.__flight.search_fields(x)
+				fld = self.__flight.search_fields(x)[0]
 				if fld is not None:
-					fld_info = [{'type':'field', 'value': fld[1]['id']}]
-					fld_type = fld[1]['type']
+					fld_info = [{'type':'field', 'value': fld['id']}]
+					fld_type = fld['type']
 					fld_loc[i] = True
 				else:
 					raise ValueError("No field was found with the keyword %s. Please double-check if it is a right keyword." % x)
@@ -267,9 +277,9 @@ class FltQuery(Query):
 				dff = self.__to_dataframe(content)
 			except:
 				print "Something's wrong. Returning what has been sent so far."				
-				from pprint import pprint
-				pprint(resp_h)
-				pprint(content)
+				# from pprint import pprint
+				# pprint(resp_h)
+				# pprint(content)
 				return df
 			
 			if ctr == 0:
@@ -318,8 +328,8 @@ class FltQuery(Query):
 
 		print("Raw JSON output to Pandas dataframe...")
 		col      = [h['name'] for h in json_output['header']]
-		coltypes = [c[1]['type'] for c in self.__columns]
-		col_id   = [c[1]['id'] for c in self.__columns]
+		coltypes = [c['type'] for c in self.__columns]
+		col_id   = [c['id'] for c in self.__columns]
 		val      = json_output['rows']
 
 		df = pd.DataFrame(data = val, columns = col)
@@ -340,20 +350,24 @@ class FltQuery(Query):
 		# this query result at the runway ID column of the original query result.
 		# I know this is crappy but it seems the best way I could find.
 		for cid, cname, ctype in zip(col_id, col, coltypes):
-			if ctype=='number':				
-				df[cname] = pd.to_numeric(df[cname])
-			elif ctype=='discrete':
-				k_map = self.__flight.list_allvalues(field_id = cid, in_dict = True)
-				if len(k_map) == 0:
-					df[cname] = self.__get_rwy_id(cname)
-				else:
-					# df[cname] = df[cname].astype(str)
-					# df = df.replace({cname: k_map})
-					df = df.replace({cname: k_map})
-			elif ctype=='boolean':
-				df[cname] = df[cname].astype(bool)
-			elif ctype=='dateTime':
-				df[cname] = pd.to_datetime(df[cname])
+
+			try:
+				if ctype=='number':				
+					df[cname] = pd.to_numeric(df[cname])
+				elif ctype=='discrete':
+					k_map = self.__flight.list_allvalues(field_id = cid, in_dict = True)
+					if len(k_map) == 0:
+						df[cname] = self.__get_rwy_id(cname)
+					else:
+						# df[cname] = df[cname].astype(str)
+						df = df.replace({cname: k_map})
+				elif ctype=='boolean':
+					df[cname] = df[cname].astype(bool)
+				elif ctype=='dateTime':
+					df[cname] = pd.to_datetime(df[cname])
+			except ValueError:
+				print "Somethings wrong when converting to Pandas DataFrame for column '%s' (type: %s)." % (cname, ctype)
+
 		print("Done.")
 		return df
 
@@ -376,17 +390,25 @@ class FltQuery(Query):
 		return self.__to_dataframe(content)[cname]
 
 
+	def update_dbtree(self, *args):
+		self.__flight.update_tree(*args, **{"treetype":"dbtree"})
 
-	def update_datatree(self, *args):
-		self.__flight.update_tree(*args)
+
+	def update_fieldtree(self, *args):
+		self.__flight.update_tree(*args, **{"treetype":"fieldtree"})
+
+	def generate_preset_fieldtree(self):
+		self.__flight.make_default_tree()
 
 
-	def save_datatree(self, file_name = None):
+	def save_metadata(self, file_name = None):
 		self.__flight.save_tree(file_name)
 
 
-	def load_datatree(self, file_name = None):
+	def load_metadata(self, file_name = None):
 		self.__flight.load_tree(file_name)
+
+
 
 
 
