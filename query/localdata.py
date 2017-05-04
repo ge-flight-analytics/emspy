@@ -18,7 +18,7 @@ class LocalData:
 
 		if dbfile is None:
 			dbfile = os.path.join(emspy.__path__[0], "data","emsMetaData.db")
-			dbfile = os.path.abspath(dbfile)
+		dbfile = os.path.abspath(dbfile)
 		self.__dbfile = dbfile
 		self.__connect()
 

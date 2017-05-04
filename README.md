@@ -293,7 +293,7 @@ You can query data of time-series parameters with respect to individual flight r
 
 ```python
 # Flight query with an APM profile. It will return data for 10 flights
-fq = FltQuery(c, "ems9", "demo.db")
+fq = FltQuery(c, "ems9", data_file = "demo.db")
 fq.set_database("fdw flights")
 # If you reuse the meta-data, you don't need to update db/field trees.
 
@@ -311,15 +311,15 @@ flt = fq.run()
 
 # === Run time series query for flights ===
 
-tsq = TSeriesQuery(c, "ems9")
+tsq = TSeriesQuery(c, "ems9", data_file = "demo.db")
 tsq.select(
   "baro-corrected altitude", 
   "airspeed (calibrated; 1 or only)", 
   "ground speed (best avail)",
     "egt (left inbd eng)", 
     "egt (right inbd eng)", 
-    "N1 (left inbd eng)", 
-    "N1 (right inbd eng)")
+    "N1 (left inbd eng) (%)", 
+    "N1 (right inbd eng) (%)")
 
 # Run querying multiple flights at once. Start time = 0, end time = 15 mins (900 secs) for all flights. 
 # A better use case is that those start/end times are fed by timepoint measurements of your APM profile.

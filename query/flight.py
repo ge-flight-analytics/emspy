@@ -10,13 +10,14 @@ class Flight:
                     'Profile 16 Extra Data', 'Flight Review', 'Data Information',
                     'Operational Information', 'Operational Information (ODW2)',
                     'Weather Information', 'Profiles', 'Profile']
-    metadata = None
+
 
     def __init__(self, conn, ems_id, data_file=None):
 
         self._conn = conn
         self._ems_id = ems_id
         self._db_id  = None
+        self._metadata = None
         self._trees  = {'fieldtree': None, 'dbtree': None, 'kvmaps': None}
         self._fields = []
         self.__cntr = 0
@@ -29,12 +30,12 @@ class Flight:
 
     def load_tree(self, file_name=None):
 
-        if Flight.metadata is None:
-            Flight.metadata = LocalData(file_name)
+        if self._metadata is None:
+            self._metadata = LocalData(file_name)
         else:
-            if (file_name is not None) and (Flight.metadata.file_loc() != os.path.abspath(file_name)):
-                Flight.metadata.close()
-                Flight.metadata = LocalData(file_name)
+            if (file_name is not None) and (self._metadata.file_loc() != os.path.abspath(file_name)):
+                self._metadata.close()
+                self._metadata = LocalData(file_name)
 
         self._trees = {'fieldtree': self.__get_fieldtree(), 
                        'dbtree'   : self.__get_dbtree(),
@@ -44,13 +45,13 @@ class Flight:
     def save_tree(self, file_name=None):
 
         from shutil import copyfile
-        ld = Flight.metadata
+        ld = self._metadata
         if (file_name is not None) and (ld.file_loc() != os.path.abspath(file_name)):
             # A new file location is given, copy all the data in the current file with new file name,
             # and save the currently loaded tree data into the new file too.
-            copyfile(Flight.metadata.file_loc(), file_name)
-            Flight.metadata.close()
-            Flight.metadata = LocalData(file_name)
+            copyfile(self._metadata.file_loc(), file_name)
+            self._metadata.close()
+            self._metadata = LocalData(file_name)
         
         self.__save_fieldtree()
         self.__save_dbtree()
@@ -60,19 +61,19 @@ class Flight:
 
     def __get_fieldtree(self):
         if self._db_id is None:
-            return pd.DataFrame(columns=Flight.metadata.table_info['fieldtree'])
+            return pd.DataFrame(columns=self._metadata.table_info['fieldtree'])
         else:
-            return Flight.metadata.get_data("fieldtree","ems_id = %d and db_id = '%s'" % (self._ems_id, self._db_id))
+            return self._metadata.get_data("fieldtree","ems_id = %d and db_id = '%s'" % (self._ems_id, self._db_id))
 
 
     def __save_fieldtree(self):
         if len(self._trees['fieldtree']) > 0:
-            Flight.metadata.delete_data("fieldtree", "ems_id = %d and db_id = '%s'" % (self._ems_id, self._db_id))
-            Flight.metadata.append_data("fieldtree", self._trees['fieldtree'])
+            self._metadata.delete_data("fieldtree", "ems_id = %d and db_id = '%s'" % (self._ems_id, self._db_id))
+            self._metadata.append_data("fieldtree", self._trees['fieldtree'])
 
 
     def __get_dbtree(self):
-        T = Flight.metadata.get_data("dbtree", "ems_id = %d" % self._ems_id)
+        T = self._metadata.get_data("dbtree", "ems_id = %d" % self._ems_id)
         if len(T) < 1:
             dbroot = {'ems_id': self._ems_id,
                       'id': "[-hub-][entity-type-group][[--][internal-type-group][root]]",
@@ -89,19 +90,19 @@ class Flight:
 
     def __save_dbtree(self):
         if len(self._trees['dbtree']) > 0:
-            Flight.metadata.delete_data("dbtree", "ems_id = %d" % self._ems_id)
-            Flight.metadata.append_data("dbtree", self._trees['dbtree'])        
+            self._metadata.delete_data("dbtree", "ems_id = %d" % self._ems_id)
+            self._metadata.append_data("dbtree", self._trees['dbtree'])        
 
 
     def __get_kvmaps(self):
-        T = Flight.metadata.get_data("kvmaps", "ems_id = %d" % self._ems_id)
+        T = self._metadata.get_data("kvmaps", "ems_id = %d" % self._ems_id)
         return T
 
 
     def __save_kvmaps(self):
         if len(self._trees['kvmaps']) > 0:
-            Flight.metadata.delete_data("kvmaps", "ems_id = %d" % self._ems_id)
-            Flight.metadata.append_data("kvmaps", self._trees['kvmaps'])     
+            self._metadata.delete_data("kvmaps", "ems_id = %d" % self._ems_id)
+            self._metadata.append_data("kvmaps", self._trees['kvmaps'])     
 
 
     def set_database(self, name):
@@ -109,7 +110,9 @@ class Flight:
         tr = self._trees['dbtree']
         self._db_id = tr[(tr.nodetype == 'database') & tr.name.str.contains(treat_spchar(name), case=False)]['id'].values[0]
         self._trees['fieldtree'] = self.__get_fieldtree()
-        self.__update_children(self.get_database(), treetype = "fieldtree")
+
+        if self._trees['fieldtree'].empty:
+            self.__update_children(self.get_database(), treetype = "fieldtree")
 
         print("Using database '%s'." % self.get_database()['name'])
 		
@@ -355,7 +358,8 @@ class Flight:
                     ff = treat_spchar(ff)
                     parent_id = chld[chld.name.str.contains(ff, case=False)]['id'].tolist()
                     if i < (len(f)-1):
-                        chld = chld[chld.parent_id.isin(parent_id)]
+                        tr   = self._trees['fieldtree']
+                        chld = tr[tr.parent_id.isin(parent_id)]
                     else:
                         chld = chld[(chld.nodetype == "field") & chld.name.str.contains(ff, case=False)]
                 fres = chld
