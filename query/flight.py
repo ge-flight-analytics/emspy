@@ -110,7 +110,9 @@ class Flight:
         tr = self._trees['dbtree']
         self._db_id = tr[(tr.nodetype == 'database') & tr.name.str.contains(treat_spchar(name), case=False)]['id'].values[0]
         self._trees['fieldtree'] = self.__get_fieldtree()
-        self.__update_children(self.get_database(), treetype = "fieldtree")
+
+        if self._trees['fieldtree'].empty:
+            self.__update_children(self.get_database(), treetype = "fieldtree")
 
         print("Using database '%s'." % self.get_database()['name'])
 		
@@ -356,7 +358,8 @@ class Flight:
                     ff = treat_spchar(ff)
                     parent_id = chld[chld.name.str.contains(ff, case=False)]['id'].tolist()
                     if i < (len(f)-1):
-                        chld = chld[chld.parent_id.isin(parent_id)]
+                        tr   = self._trees['fieldtree']
+                        chld = tr[tr.parent_id.isin(parent_id)]
                     else:
                         chld = chld[(chld.nodetype == "field") & chld.name.str.contains(ff, case=False)]
                 fres = chld

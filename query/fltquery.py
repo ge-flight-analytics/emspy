@@ -65,7 +65,8 @@ class FltQuery(Query):
 		aggregate = kwargs.get('aggregate', 'none')
 		if aggregate not in aggs:
 			sys.exit("Wrong aggregation selected. Use one of %s." % aggs)
-		fields = self.__flight.search_fields(*args)
+		fields = self.__flight.search_fields(*args, **kwargs)
+		
 		if type(fields)!=list: fields = [fields]
 
 		for field in fields:
