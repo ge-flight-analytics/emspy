@@ -113,7 +113,7 @@ class TSeriesQuery(Query):
         return df
 
 
-    def multi_run(self, flight, start = None, end = None, timestep=None, timepoint = None, save_file = None):
+    def multi_run(self, flight, start = None, end = None, timestep=None, timepoint = None, save_file = None, verbose = True):
 
         res       = list()
         attr_flag = False
@@ -133,10 +133,11 @@ class TSeriesQuery(Query):
         else: 
             warnings.warn("Time points are not yet supported. The given time points will be ignored.")
             timepoint   = [None]*len(FR)
-
-        print('\n=== Start running time-series data querying for %d flights ===\n' % len(FR))
+            
+        if verbose: print('\n=== Start running time-series data querying for %d flights ===\n' % len(FR))
+        
         for i, fr in enumerate(FR):
-            print '\r\x1b[K%d / %d: FR %d' % (i+1, len(FR), fr),
+            if verbose: print '\r\x1b[K%d / %d: FR %d' % (i+1, len(FR), fr),
             i_res = dict()
             if attr_flag:
                 i_res['flt_data'] = flight.iloc[i,:].to_dict()
@@ -147,7 +148,7 @@ class TSeriesQuery(Query):
 
             if save_file is not None:
                 cPickle.dump(res, open(save_file, 'wb'))
-        print 'Done'
+        if verbose: print 'Done'
 
         return res
 

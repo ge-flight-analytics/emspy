@@ -356,10 +356,11 @@ class Flight:
                 chld = self._trees['fieldtree']
                 for i, ff in enumerate(f):
                     ff = treat_spchar(ff)
-                    parent_id = chld[chld.name.str.contains(ff, case=False)]['id'].tolist()
                     if i < (len(f)-1):
-                        tr   = self._trees['fieldtree']
-                        chld = tr[tr.parent_id.isin(parent_id)]
+                        chld      = chld[chld.nodetype == "field_group"]
+                        parent_id = chld[chld.name.str.contains(ff, case=False)]['id'].tolist()
+                        tr        = self._trees['fieldtree']
+                        chld      = tr[tr.parent_id.isin(parent_id)]
                     else:
                         chld = chld[(chld.nodetype == "field") & chld.name.str.contains(ff, case=False)]
                 fres = chld
@@ -390,16 +391,19 @@ class Flight:
             fld = self.search_fields(field)[0]
             fld_type = fld['type']
             fld_id = fld['id']
+            fld_name = fld['name']
             if fld_type != 'discrete':
                 sys.exit("Queried field should be discrete to get the list of possible values.")
         else:
             fld_id = field_id
+            tr     = self._trees['fieldtree']
+            fld_name = tr.loc[tr.id == fld_id, 'name'].values[0]
 
         T = self._trees['kvmaps']
         kmap = T[(T.ems_id == self._ems_id) & (T.id == fld_id)]
 
         if len(kmap) == 0:
-            print("Getting key-value mappings from API. (Caution: runway ID takes much longer)")
+            print("%s: Getting key-value mappings from API. (Caution: Some fields take a very long time)" % fld_name)
 
             resp_h, content = self._conn.request(uri_keys=('database', 'field'),
                                                  uri_args=(self._ems_id, self._db_id, fld_id))
