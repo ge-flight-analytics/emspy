@@ -42,7 +42,7 @@ class Connection:
 			opener = urllib2.build_opener(proxy_handler, urllib2.HTTPHandler)
 			urllib2.install_opener(opener)	
 
-		headers = {'Content-Type':'application/x-www-form-urlencoded'}
+		headers = {'Content-Type':'application/x-www-form-urlencoded', 'User-Agent':common.user_agent}
 		data   = {'grant_type': 'password', 'username': user, 'password': pwd}
 
 		resp_h, content = self.request(
@@ -73,9 +73,9 @@ class Connection:
 			verbose=False
 		):
 
-		# If no customer headers given, use the token header
+		# If no custom headers are given, use our own
 		if headers is None: 
-			headers = {'Authorization': ' '.join([self.token_type, self.token]), 'Accept-Encoding': 'gzip'}
+			headers = {'Authorization': ' '.join([self.token_type, self.token]), 'Accept-Encoding': 'gzip', 'User-Agent': common.user_agent }
 
 		# If uri_keys are given, find the uri from the uris dictionary
 		if uri_keys is not None:
@@ -143,7 +143,7 @@ class Connection:
 		"""Sends the request and returns the response, optionally ignoring ssl errors."""
 
 		# Normally you do NOT want to ignore SSL errors, but this is
-		# sometimes necessary on beta API endpoints wihtout a proper cert.
+		# sometimes necessary on beta API endpoints without a proper cert.
 		return urllib2.urlopen(req,
 							   context = ssl._create_unverified_context() if self.__ignore_ssl_errors else None)
 

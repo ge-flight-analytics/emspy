@@ -9,6 +9,8 @@ uri_root = {
 	'nightly'	: 'https://emsapitest.ausdig.com/api'
 }
 
+user_agent = 'ems-api-sdk Python v0.2'
+
 uris = {
 	'sys': {
 		'auth': '/token'
