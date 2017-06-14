@@ -62,14 +62,14 @@ The FDW Flights database is one of the frequently used databases. In order to se
 query.set_database("fdw flights")
 ```
 
-In EMS system, all databases & data fields are organized in hierarchical tree structures. In order to use a database that is not the FDW Flights, you need to tell the query object where in the EMS DB tree your database is at. The following example specifies the location of one of the Event databases in the DB tree and then set the Event database that you want to use:
+In EMS system, all databases & data fields are organized in hierarchical tree structures. In order to use a database that is not the FDW Flights, you need to tell the query object where in the EMS DB tree your database is at. You can explore the EMS database tree from [EMS Online](http://fas.efoqa.com/Docs/Rest/Demos/DataSources). The following example specifies the location of one of the Event databases in the DB tree and then set the Event database that you want to use:
 
 ```python
 query.update_dbtree("fdw", "events", "standard", "p0")
 query.set_database("p0: library flight safety events")
 ```
 
-These code lines first send queries to find the database-groups path, **FDW &rarr; APM Events &rarr; Standard Library Profiles &rarr; P0: Library Flight Safety Events**, and then select the "P0: Library Flight Safety Events" database that is located at the specified path. 
+These code lines first send queries to find the database-groups path, **FDW &rarr; APM Events &rarr; Standard Library Profiles &rarr; P0: Library Flight Safety Events**, and then select the "P0: Library Flight Safety Events" database that is located at the specified path. For a complete example, please check on [this Gist](https://gist.github.com/KMoon01/d82324594c975104c763140a54133565).
 
 ### Data Fields
 Similar to the databases, the EMS data fields are organized in a tree structure so the steps are almost identical except that you use `update_fieldtree(...)` method in order to march through the tree branches.
