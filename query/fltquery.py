@@ -65,7 +65,8 @@ class FltQuery(Query):
 		aggregate = kwargs.get('aggregate', 'none')
 		if aggregate not in aggs:
 			sys.exit("Wrong aggregation selected. Use one of %s." % aggs)
-		fields = self.__flight.search_fields(*args)
+		fields = self.__flight.search_fields(*args, **kwargs)
+		
 		if type(fields)!=list: fields = [fields]
 
 		for field in fields:
@@ -355,12 +356,12 @@ class FltQuery(Query):
 				if ctype=='number':				
 					df[cname] = pd.to_numeric(df[cname])
 				elif ctype=='discrete':
-					k_map = self.__flight.list_allvalues(field_id = cid, in_dict = True)
-					if len(k_map) == 0:
-						df[cname] = self.__get_rwy_id(cname)
-					else:
-						# df[cname] = df[cname].astype(str)
-						df = df.replace({cname: k_map})
+					df[cname] = self.__key_to_val(df[cname], cid)
+					# k_map = self.__flight.list_allvalues(field_id = cid, in_dict = True)
+					# if len(k_map) == 0:
+					# 	df[cname] = self.__get_rwy_id(cname)
+					# else:
+					# 	df = df.replace({cname: k_map})
 				elif ctype=='boolean':
 					df[cname] = df[cname].astype(bool)
 				elif ctype=='dateTime':
@@ -372,6 +373,23 @@ class FltQuery(Query):
 		return df
 
 
+	def __key_to_val(self, ds, field_id):
+		
+		k_map = self.__flight.list_allvalues(field_id = field_id, in_df = True)
+		
+		# Sometimes k_map is a very large table making "replace" operation 
+		# very slow. Just grap kv-maps subset that are present in the target 
+		# dataframe
+		k_map = k_map[k_map.key.isin(ds.unique())]
+		# Change k_map in dict
+		km_dict = dict()
+		for i, r in k_map.iterrows():
+			km_dict[r['key']] = r['value']
+		ds = ds.replace(km_dict)
+		
+		return ds
+		
+		
 	def __get_rwy_id(self, cname):
 		'''
 		Deprecated
