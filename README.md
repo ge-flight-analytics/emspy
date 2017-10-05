@@ -6,6 +6,7 @@ Any contribution is welcome!
 Dependency: 
 * numpy >= 1.11 
 * pandas >= 0.18
+* future >= 0.16
 
 ## v0.2.1 Changes
 * Packed as an installable package.
