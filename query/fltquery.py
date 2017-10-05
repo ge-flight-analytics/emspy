@@ -109,7 +109,14 @@ class FltQuery(Query):
 
 
 	def __split_expr(self, expr):
-
+		'''
+		This function might need to be updated to be more robust. The split of a
+		given expression will not be correctly done if either field or field 
+		value contains symbols identical to filtering operators.
+		
+		In fact the correction was already applied in Rems so refer to Rems'
+		split_expr function to check what was done there.
+		'''
 		import re
 
 		for pattern in ['[=!<>]=?'] + sp_ops.keys():
@@ -364,7 +371,7 @@ class FltQuery(Query):
 				elif ctype=='boolean':
 					df[cname] = df[cname].astype(bool)
 				elif ctype=='dateTime':
-					df[cname] = pd.to_datetime(df[cname])
+					df[cname] = pd.to_datetime(df[cname]).dt.tz_localize('UTC')
 			except ValueError:
 				print "Somethings wrong when converting to Pandas DataFrame for column '%s' (type: %s)." % (cname, ctype)
 		print("Done.")
