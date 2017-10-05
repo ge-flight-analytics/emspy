@@ -7,15 +7,15 @@ Dependency:
 * numpy >= 1.11 
 * pandas >= 0.18
 
-## v0.2 Major Changes
-* User can select an API server.
-* User can select an arbitrary database such as Flight, Operational, and Event databases. Only the EMS Flight database was accessible in v0.1.
-* Meta-data (EMS data/database tree structures) is stored in SQLite format instead of Python's own pickle format. This means better reusability of the meta-data. You can use the same meta-data file from Rems, the R wrapper version without generating one separately for Rems. 
-* No more dependency to NetworkX
+## v0.2.1 Changes
+* Packed as an installable package.
+* emsPy is now Python 3 compatible.
 
 
 ## Installation
-Right now, I've not yet packed this into an installation package. Just download or clone emsPy in a local directory and work on there. I'll make it as an installable package soon.
+1. Download or clone emsPy. If downloaded, upzip the compressed file.
+2. Go to the folder that you unzipped or git-cloned.
+3. At the folder, open the command prompt window and run `pip install .` For dev-mode, run `pip install -e .`
 
 
 ## Make an EMS API Connection
