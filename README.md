@@ -11,7 +11,7 @@ Dependency:
 ## v0.2.1 Changes
 * Packed as an installable package.
 * emsPy is now Python 3 compatible.
-* **Caution: this version is possibly buggy, especially in the installation and Python 3 usage.** I have not gone through many tests yet in Python 3 yet. 
+* **Caution: this version is possibly buggy, especially in the installation and Python 3 usage.** I have not gone through many tests yet in Python 3. 
 
 
 ## Installation
