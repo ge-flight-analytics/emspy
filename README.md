@@ -11,11 +11,11 @@ Dependency:
 ## v0.2.1 Changes
 * Packed as an installable package.
 * emsPy is now Python 3 compatible.
-* **Caution: this version is possibly quite buggy.** Did not go through many tests either Python 2 or Python 3 yet. I may end up using tox to do that.
+* **Caution: this version is possibly buggy, especially in the installation and Python 3 usage.** I have not gone through many tests yet in Python 3 yet. 
 
 
 ## Installation
-1. Download or clone emsPy. If downloaded, upzip the compressed file.
+1. Download or clone emsPy. If downloaded, unzip the compressed file.
 2. Go to the folder that you unzipped or git-cloned, where you can find `setup.py` file.
 3. At the folder, open the command prompt window and run `pip install .` For dev-mode, run `pip install -e .`
 
