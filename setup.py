@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name = 'emspy',
       version = '0.2.1',
@@ -12,7 +12,7 @@ setup(name = 'emspy',
       author = 'Kyungjin Moon',
       author_email = 'jimin96@gmail.com',
       license = 'MIT',
-      packages = ['emspy'],
+      packages = find_packages(),
       install_requires = ['numpy', 'pandas', 'future'],
       zip_safe = False)
       
