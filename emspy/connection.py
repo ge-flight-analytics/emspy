@@ -91,7 +91,7 @@ class Connection(object):
 		if uri_args is not None:
 			# uri    = uri % uri_args
 			# Unencoded url does not work all of sudden...
-			encode_args = lambda x: urllib.parse.quote(x) if type(x) in (str, str) else x
+			encode_args = lambda x: urllib.parse.quote(x) if type(x) in (str, unicode) else x
 			if type(uri_args) in (list, tuple):
 				uri = uri % tuple(map(encode_args, uri_args))
 			else:
