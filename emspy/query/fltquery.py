@@ -345,6 +345,8 @@ class FltQuery(Query):
 		val      = json_output['rows']
 
 		df = pd.DataFrame(data = val, columns = col)
+		
+		if df.empty: return df
 
 		if self.__queryset['format'] == "display":
 			print("Done.")

@@ -1,10 +1,12 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 from __future__ import absolute_import
 from future import standard_library
 standard_library.install_aliases()
 from builtins import map
 from builtins import object
 import json, urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse, ssl, sys, io, gzip
+from numbers import Number
 import pprint as pp
 from . import common
 
@@ -91,12 +93,20 @@ class Connection(object):
 		if uri_args is not None:
 			# uri    = uri % uri_args
 			# Unencoded url does not work all of sudden...
-			encode_args = lambda x: urllib.parse.quote(x) if type(x) in (str, unicode) else x
-			if type(uri_args) in (list, tuple):
-				uri = uri % tuple(map(encode_args, uri_args))
-			else:
-				uri = uri % encode_args(uri_args)
-
+			
+			# encode_args = lambda x: urllib.parse.quote(x) if type(x) in (str, unicode) else x
+			# if type(uri_args) in (list, tuple):
+			# 	uri = uri % tuple(map(encode_args, uri_args))
+			# else:
+			# 	uri = uri % encode_args(uri_args)
+			
+			if type(uri_args) not in (list, tuple):
+				uri_args = [uri_args]
+				
+			uri_args = [x if isinstance(x, Number) else urllib.parse.quote(x) \
+						for x in uri_args]
+			uri = uri % tuple(uri_args)
+			
 		# Append query to the uri if body is given
 		if body is not None:
 			uri    = uri + "?" + urllib.parse.urlencode(body)
@@ -109,7 +119,7 @@ class Connection(object):
 			headers['Content-Type'] = 'application/json'
 			data = json.dumps(jsondata).encode('utf-8')
 
-
+		# uri = uri.encode('utf-8')
 		req = urllib.request.Request(uri, data=data, headers=headers)
 		try:
 			resp = self.__send_request(req)
