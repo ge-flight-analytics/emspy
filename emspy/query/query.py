@@ -23,6 +23,8 @@ class Query(object):
 
 		self.__ems = EMS(self._conn)
 
+	def get_ems_id(self):
+		return self._ems_id
 
 	def _init_assets(self):
 
