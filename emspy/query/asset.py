@@ -67,7 +67,7 @@ class Asset(object):
 
 def size(an_asset):
 	
-	if issubclass(an_asset, Asset):
+	if not issubclass(an_asset, Asset):
 		raise TypeError("Input should be an object inherited from Asset class.")
 
 	if an_asset.list_all() is None: 
