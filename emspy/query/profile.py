@@ -13,8 +13,9 @@ class Profile(Query):
         self._ems_name = ems_name
         self._input_profile_number = profile_number
         self._guid = None
-        self._input_profile_name = profile_name
         self._glossary = None
+        self._events_glossary = None
+        self._input_profile_name = profile_name
         self._ems_id = self.get_ems_id()
         self._search()
 
@@ -23,15 +24,47 @@ class Profile(Query):
             resp_h, dict_data = self._conn.request(uri_keys=('profile', 'glossary'),
                                                    uri_args=(self._ems_id, self._guid))
             a = pd.DataFrame.from_dict(dict_data)
-            # convert the dictionaries values within the glossaryItems column of a into a new dataframe
+            # convert the dictionaries values within the glossaryItems column of a into a new DataFrame
             b = a['glossaryItems'].apply(pd.Series)
             # concatenate a and b, drop the old glossaryItems column name
-            c = pd.concat([a, b], axis = 1).drop('glossaryItems', axis = 1)
+            c = pd.concat([a, b], axis=1).drop('glossaryItems', axis=1)
             self._glossary = c
             return self._glossary
         else:
             print("The search results did not return a profile matching the input profile name and number on the given"
-                  "system.  Please try to create the profile object with different arguments.")
+                  "system.  Please try to instantiate the profile object with different arguments.")
+            return
+
+    def get_events_glossary(self):
+        if self._guid is not None:
+            resp_h, dict_data = self._conn.request(uri_keys=('profile', 'events'),
+                                                   uri_args=(self._ems_id, self._guid))
+            a = pd.DataFrame(dict_data)
+            a.set_index('id', inplace=True)
+            self._events_glossary = a
+            return self._events_glossary
+        else:
+            print("The search results did not return a profile matching the input profile name and number on the given"
+                  "system.  Please try to instantiate the profile object with different arguments.")
+            return
+
+    def get_profile_results(self, flight_id):
+        raise NotImplementedError
+        if self._guid is not None:
+            resp_h, dict_data = self._conn.request(uri_keys=('profile', 'profile_results'),
+                                                   uri_args=(self._ems_id, flight_id, self._guid))
+            '''
+            TODO: Implement some sort of parsing of resulting data.  Honestly, it's not super useful unless paired
+            with some supplementary information.  There are no names.  No descriptions.  Perhaps I could combine this
+            information with the information obtained in the "glossary" and create a meaningful output.   
+            
+            Glossary, however, does not contain the names and ID's of events.  Maybe those will have to be grabbed using
+            the other API endpoints.  
+            '''
+        else:
+            print("The search results did not return a profile matching the input profile name and number on the given"
+                  "system.  Please try to instantiate the profile object with different arguments.")
+            return
 
     def _search(self):
         resp_h, dict_data = self._conn.request(uri_keys=('profile', 'search'), uri_args=self._ems_id,

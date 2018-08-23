@@ -51,13 +51,14 @@ uris = {
 		'group'		: '/v2/ems-systems/%s/analytic-groups',    # (emsSystemId)
 		'group_f'	: '/v2/ems-systems/%s/flights/%s/analytic-groups', # (emsSystemId, flightId)
 		'query'		: '/v2/ems-systems/%s/flights/%s/analytics/query', # (emsSystemId, flightId)
-		'metadata'  : '/v2/ems-systems/%s/flights/%s/analytics/metadata' # (emsSystemId, flightId)
+		'metadata'	: '/v2/ems-systems/%s/flights/%s/analytics/metadata' # (emsSystemId, flightId)
 	},
 	'profile': {
-		'search'	: '/v2/ems-systems/%s/profiles',		# (emsSystemId)
-		'glossary'	: '/v2/ems-systems/%s/profiles/%s/glossary', 	# (emsSystemId, profileId)
-		'events'	: '/v2/ems-systems/%s/profiles/%s/events', 	# (emsSystemId, profileId)
-		'single_event'	: '/v2/ems-systems/%s/profiles/%s/events/%s',		# (emsSystemId, profileId, eventId)
+		'profile_results'	: '/v2/ems-systems/%s/flights/%s/profiles/%s/query',  # (emsSystemId, flightId, profileId)
+		'search'			: '/v2/ems-systems/%s/profiles',  # (emsSystemId)
+		'glossary'			: '/v2/ems-systems/%s/profiles/%s/glossary',  # (emsSystemId, profileId)
+		'events'			: '/v2/ems-systems/%s/profiles/%s/events',  # (emsSystemId, profileId)
+		'single_event'		: '/v2/ems-systems/%s/profiles/%s/events/%s',  # (emsSystemId, profileId, eventId)
 	}
 
 }
