@@ -83,7 +83,7 @@ class Profile(Query):
             print('Profile name: {0}, profile number: {1}.'.format(self._profile_name, self._local_id))
         elif len(filtered < 0):
             print(
-                'No profile found with the supplied profile number and name.  Perhaps try without the name (it will'
+                'No profile found with the supplied profile number and name.  Perhaps try without the name (it could'
                 ' take longer).')
         elif len(filtered > 1):
             print('Somehow found multiple profiles with the supplied name and number.')
