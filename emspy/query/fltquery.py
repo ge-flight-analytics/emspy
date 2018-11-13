@@ -4,7 +4,7 @@ from builtins import zip
 from builtins import str
 from emspy.query import *
 from .query import Query
- 
+
 import pandas as pd
 import sys, json
 
@@ -18,20 +18,19 @@ class FltQuery(Query):
 		self._init_assets(data_file)
 		self.reset()
 
-	
-	def _init_assets(self, data_file):
 
+	def _init_assets(self, data_file):
 		# Query._init_assets(self)
 		self.__flight = Flight(self._conn, self._ems_id, data_file)
 
 
 	def set_database(self, name):
-		
+
 		self.__flight.set_database(name)
 
 
 	def get_database(self):
-		
+
 		return self.__flight.get_database()
 
 
@@ -59,7 +58,7 @@ class FltQuery(Query):
 		Example
 		-------
 		Following is the example of select method to query three fields and one more with
-		aggregation function applied. The values are appended until the whole query is 
+		aggregation function applied. The values are appended until the whole query is
 		reset.
 
 		>> query.select("customer id", "takeoff valid", "takeoff airport iata code")
@@ -70,7 +69,7 @@ class FltQuery(Query):
 		if aggregate not in aggs:
 			sys.exit("Wrong aggregation selected. Use one of %s." % aggs)
 		fields = self.__flight.search_fields(*args, **kwargs)
-		
+
 		if type(fields)!=list: fields = [fields]
 
 		for field in fields:
@@ -115,9 +114,9 @@ class FltQuery(Query):
 	def __split_expr(self, expr):
 		'''
 		This function might need to be updated to be more robust. The split of a
-		given expression will not be correctly done if either field or field 
+		given expression will not be correctly done if either field or field
 		value contains symbols identical to filtering operators.
-		
+
 		In fact the correction was already applied in Rems so refer to Rems'
 		split_expr function to check what was done there.
 		'''
@@ -155,14 +154,14 @@ class FltQuery(Query):
 					raise ValueError("No field was found with the keyword %s. Please double-check if it is a right keyword." % x)
 			else:
 				if type(x) != list:
-					x = [x]				
+					x = [x]
 				val_info = [{'type':'constant','value':v} for v in x]
 
 		if fld_loc[1]:
-			if '<' in expr_vec[1]: 
+			if '<' in expr_vec[1]:
 				op = expr_vec[1].replace('<','>')
 			else:
-				op = expr_vec[1].replace('>','<')			
+				op = expr_vec[1].replace('>','<')
 
 		arg_list = fld_info + val_info
 
@@ -193,7 +192,7 @@ class FltQuery(Query):
 
 	# def readable_output(self, x=False):
 
-	# 	if x: 
+	# 	if x:
 	# 		y = "display"
 	# 	else:
 	# 		y = "none"
@@ -213,8 +212,8 @@ class FltQuery(Query):
 	def simple_run(self, output = "dataframe"):
 		'''
 		Sends query to EMS API via the regular query call. The regular query call has a size limit
-		in the returned data, which is 25000 rows max. Any output that has greater than 25000 rows 
-		will be truncated. For the query that is expected to return with large data. Please use the 
+		in the returned data, which is 25000 rows max. Any output that has greater than 25000 rows
+		will be truncated. For the query that is expected to return with large data. Please use the
 		async_run method.
 
 		Input
@@ -226,12 +225,12 @@ class FltQuery(Query):
 		Returned data for query in Pandas' DataFrame format
 		'''
 		print('Sending a simple query to EMS ...')
-		resp_h, content = self._conn.request(	
-			rtype="POST", 
+		resp_h, content = self._conn.request(
+			rtype="POST",
 			uri_keys=('database','query'),
 			uri_args=(self._ems_id, self.__flight.get_database()['id']),
 			jsondata= self.__queryset
-			)	
+			)
 		print('Done.')
 
 		if output == "raw":
@@ -279,7 +278,7 @@ class FltQuery(Query):
 				resp_h, content = self._conn.request(
 					rtype= "GET",
 					uri_keys = ('database', 'get_asyncq'),
-					uri_args = (self._ems_id, 
+					uri_args = (self._ems_id,
 								self.__flight.get_database()['id'],
 								query_id,
 								n_row*ctr,
@@ -288,12 +287,12 @@ class FltQuery(Query):
 				content['header'] = query_header
 				dff = self.__to_dataframe(content)
 			except:
-				print("Something's wrong. Returning what has been sent so far.")				
+				print("Something's wrong. Returning what has been sent so far.")
 				# from pprint import pprint
 				# pprint(resp_h)
 				# pprint(content)
 				return df
-			
+
 			if ctr == 0:
 				df = dff
 			else:
@@ -301,9 +300,9 @@ class FltQuery(Query):
 
 			print("Received up to %d rows." % df.shape[0])
 			if dff.shape[0] < n_row:
-				break	
+				break
 			ctr += 1
-			
+
 		print("Done.")
 		return df
 
@@ -334,7 +333,7 @@ class FltQuery(Query):
 
 	def __to_dataframe(self, json_output):
 		'''
-		Changes Dict (JSON) formatted raw output from the EMS API to Pandas' 
+		Changes Dict (JSON) formatted raw output from the EMS API to Pandas'
 		DataFrame.
 		'''
 
@@ -345,7 +344,7 @@ class FltQuery(Query):
 		val      = json_output['rows']
 
 		df = pd.DataFrame(data = val, columns = col)
-		
+
 		if df.empty: return df
 
 		if self.__queryset['format'] == "display":
@@ -365,7 +364,7 @@ class FltQuery(Query):
 		# I know this is crappy but it seems the best way I could find.
 		for i, cid, cname, ctype in zip(range(len(col)), col_id, col, coltypes):
 			try:
-				if ctype=='number':				
+				if ctype=='number':
 					df.iloc[:, i] = pd.to_numeric(df.iloc[:, i])
 				elif ctype=='discrete':
 					df.iloc[:, i] = self.__key_to_val(df.iloc[:, i], cid)
@@ -385,11 +384,11 @@ class FltQuery(Query):
 
 
 	def __key_to_val(self, ds, field_id):
-		
+
 		k_map = self.__flight.list_allvalues(field_id = field_id, in_df = True)
-		
-		# Sometimes k_map is a very large table making "replace" operation 
-		# very slow. Just grap kv-maps subset that are present in the target 
+
+		# Sometimes k_map is a very large table making "replace" operation
+		# very slow. Just grap kv-maps subset that are present in the target
 		# dataframe
 		k_map = k_map[k_map.key.isin(ds.unique())]
 		# Change k_map in dict
@@ -397,10 +396,10 @@ class FltQuery(Query):
 		for i, r in k_map.iterrows():
 			km_dict[r['key']] = r['value']
 		ds = ds.replace(km_dict)
-		
+
 		return ds
-		
-		
+
+
 	def __get_rwy_id(self, cname):
 		'''
 		Deprecated
@@ -419,12 +418,14 @@ class FltQuery(Query):
 		return self.__to_dataframe(content)[cname]
 
 
-	def update_dbtree(self, *args):
-		self.__flight.update_tree(*args, **{"treetype":"dbtree"})
+	def update_dbtree(self, *args, **kwargs):
+		exclude_tree = kwargs.get("exclude_tree",[])
+		self.__flight.update_tree(*args, **{"treetype":"dbtree", "exclude_tree":exclude_tree})
 
 
-	def update_fieldtree(self, *args):
-		self.__flight.update_tree(*args, **{"treetype":"fieldtree"})
+	def update_fieldtree(self, *args, **kwargs):
+		exclude_tree = kwargs.get("exclude_tree", [])
+		self.__flight.update_tree(*args, **{"treetype":"fieldtree", "exclude_tree":exclude_tree})
 
 	def generate_preset_fieldtree(self):
 		self.__flight.make_default_tree()
@@ -448,7 +449,7 @@ class FltQuery(Query):
 ## Experimental...
 
 basic_ops = {
-	'==': 'equal', '!=': 'notEqual', '<': 'lessThan', 
+	'==': 'equal', '!=': 'notEqual', '<': 'lessThan',
 	'<=': 'lessThanOrEqual', '>': 'greaterThan',
 	'>=': 'greaterThanOrEqual'
 }
@@ -470,15 +471,15 @@ def _filter_fmt1(op, *args):
 	for x in args:
 		fltr['value']['args'].append({'type': x['type'], 'value': x['value']})
 
-	return fltr 
+	return fltr
 
 
 def _boolean_filter(op, d):
-	
+
 	fld_info = d[0]
 	val_info = d[1]
 	if type(val_info['value'])!=bool: raise ValueError("%s: use a boolean value." % val_info['value'])
-	if op == "==": 
+	if op == "==":
 		t_op = 'is'+str(val_info['value'])
 	elif op == "!=":
 		t_op = 'is'+str(not val_info['value'])
@@ -490,7 +491,7 @@ def _boolean_filter(op, d):
 
 
 def _discrete_filter(op, d, flt):
-	fld_info = d[0]	
+	fld_info = d[0]
 
 	if op in list(basic_ops.keys()):
 		# Single input basic coniditonal operation
@@ -504,10 +505,10 @@ def _discrete_filter(op, d, flt):
 		t_op = sp_ops[op]
 		val_list = [{'type':x['type'], 'value':flt.get_value_id(x['value'], field_id=fld_info['value'])}\
 					 for x in d[1:]]
-		inp = [fld_info] + val_list			 
+		inp = [fld_info] + val_list
 		fltr = _filter_fmt1(t_op, *inp)
 	else:
-		raise ValueError("%s: Unsupported conditional operator for discrete field type." % op)	
+		raise ValueError("%s: Unsupported conditional operator for discrete field type." % op)
 	return fltr
 
 
@@ -516,7 +517,7 @@ def _number_filter(op, d):
 	if op in basic_ops:
 		t_op = basic_ops[op]
 		fltr = _filter_fmt1(t_op, d[0], d[1])
-	else: 
+	else:
 		raise ValueError("%s: Unsupported conditional operator for number field type." % op)
 	return fltr
 
@@ -532,7 +533,7 @@ def _string_filter(op, d):
 		fltr = _filter_fmt1(t_op, *d)
 
 	else:
-		raise ValueError("%s: Unsupported conditional operator for string field type." % op)		
+		raise ValueError("%s: Unsupported conditional operator for string field type." % op)
 	return fltr
 
 
@@ -551,8 +552,8 @@ def _datetime_filter(op, d):
 		# Additional json attribute to specify this is UTC time
 		fltr['value']['args'].append({'type':'constant', 'value': 'Utc'})
 	else:
-		raise ValueError("%s: Unsupported conditional operator for datetime field type." % op)		
-	return fltr		
+		raise ValueError("%s: Unsupported conditional operator for datetime field type." % op)
+	return fltr
 
 
 
