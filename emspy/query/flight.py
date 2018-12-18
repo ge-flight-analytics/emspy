@@ -305,10 +305,7 @@ class Flight(object):
         if treetype not in ("fieldtree", "dbtree"):
             raise ValueError("treetype = '%s': there is no such data table." % treetype)
 
-        if type(args[0]) == list and len(args) == 1:
-            fld_path = [s.lower() for s in args[0]]
-        else:
-            fld_path = [s.lower() for s in args]
+        fld_path = [s.lower() for s in args]
 
         for i, p in enumerate(fld_path):
             p = treat_spchar(p)
