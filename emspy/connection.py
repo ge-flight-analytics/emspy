@@ -160,8 +160,16 @@ class Connection(object):
 
 		# Normally you do NOT want to ignore SSL errors, but this is
 		# sometimes necessary on beta API endpoints without a proper cert.
-		return urllib.request.urlopen(req,
-							   context = ssl._create_unverified_context() if self.__ignore_ssl_errors else None)
+		# TODO: Find a real fix for GE Mac OS machines that are having trouble verifying.  
+		request = None
+		if self.__ignore_ssl_errors:
+			try:
+				request = urllib.request.urlopen(req, context=None)
+			except urllib.error.URLError:
+				request = urllib.request.urlopen(req, context=ssl._create_unverified_context())
+		else:
+			request = urllib.request.urlopen(req, context=None)
+		return request
 
 
 def print_resp(resp):
