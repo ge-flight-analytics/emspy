@@ -8,5 +8,4 @@ from emspy.query.flight import Flight
 from emspy.query.analytic import Analytic
 from emspy.query.fltquery import FltQuery
 from emspy.query.tsquery import TSeriesQuery
-
-
+from emspy.query.profile import Profile
