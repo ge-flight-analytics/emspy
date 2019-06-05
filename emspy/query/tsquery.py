@@ -71,7 +71,8 @@ class TSeriesQuery(Query):
         self.__queryset['offsets'] = tpoint
 
 
-    def run(self, flight, start = None, end = None, timestep = None, timepoint = None):
+    def run(self, flight, start = None, end = None, timestep = None, timepoint = None,
+            discretes_as_strings=True):
 
         # if start is None:
         #     start = 0.0
@@ -88,6 +89,12 @@ class TSeriesQuery(Query):
         #     self.range(start, end)
         if timepoint is not None:
             self.timepoint(timepoint)
+
+        # allow the user to specify discretesAsStrings = 'false'
+        # per the EMS API documentation, discretesAsStrings is true by default.  So it will only get set to false if
+        # that option is specified.  This will allow users to return discretes in time series parameters as int values.
+        if not discretes_as_strings:
+            self.__queryset['discretesAsStrings'] = 'false'
 
         elif timestep is not None:
             start = 0.0 if start is None else start
