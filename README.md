@@ -7,6 +7,7 @@ Dependency:
 * numpy >= 1.11 
 * pandas >= 0.18
 * future >= 0.16
+* networkx
 
 ## v0.2.1 Changes
 * Packed as an installable package.
