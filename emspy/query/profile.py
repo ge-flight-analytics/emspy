@@ -73,27 +73,38 @@ class Profile(Query):
                   "system.  Please try to instantiate the profile object with different arguments.")
             return
 
+    def __set_attributes(self, profile_df):
+        self._guid = profile_df['id'].values[0]
+        self._current_version = profile_df['currentVersion'].values[0]
+        self._library = profile_df['library'].values[0]
+        self._profile_name = profile_df['name'].values[0]
+        self._local_id = profile_df['localId'].values[0]
+
     def _search_by_number(self):
+        # get values via API.
         resp_h, dict_data = self._conn.request(uri_keys=('profile', 'search'), uri_args=self._ems_id,
                                                body={'search': self._input_profile_name})
-        a = pd.DataFrame.from_dict(dict_data)
+        a = pd.DataFrame.from_dict(dict_data)  # create a DataFrame from the response.
         self._search_results = a
+
         # search for the provided profile number within the returned dataframe
+        # locate rows where the localId matches the input profile number.
         filtered = a.loc[a['localId'] == self._input_profile_number]
+        # if only one row is found, set the class attributes using this row.
         if len(filtered) == 1:
             print('Found a profile with the supplied profile number and name.')
-            self._guid = filtered['id'].values[0]
-            self._current_version = filtered['currentVersion'].values[0]
-            self._library = filtered['library'].values[0]
-            self._profile_name = filtered['name'].values[0]
-            self._local_id = filtered['localId'].values[0]
+            self.__set_attributes(filtered)
             print('Profile name: {0}, profile number: {1}.'.format(self._profile_name, self._local_id))
-        elif len(filtered) < 0:
-            print(
-                'No profile found with the supplied profile number and name.  Perhaps try without the name (it could'
-                ' take longer).')
+        # if more than one rows are found (shouldn't be possible) return a lookup error.
         elif len(filtered) > 1:
-            print('Somehow found multiple profiles with the supplied name and number.')
+            template = "Found multiple profiles that could match {0}:\n\n {1}"
+            match_names = filtered['name'].values
+            match_names_formatted = '\t' + '\n\t'.join(match_names)  # format a string for printing
+            raise LookupError(template.format(self._input_profile_name, match_names_formatted))
+        # if no rows are found, return an error.
+        elif len(filtered) == 0:
+            template = "Did not find any profiles that could match profile_number: {0}."
+            raise LookupError(template.format(self._input_profile_number))
 
     def _search_by_name(self, exact=False):
         resp_h, dict_data = self._conn.request(uri_keys=('profile', 'search'), uri_args=self._ems_id,
@@ -101,25 +112,26 @@ class Profile(Query):
         a = pd.DataFrame.from_dict(dict_data)
         self._search_results = a
 
+        # are we performing an exact string search?  (i.e. using string equality rather than 'contains')
         if exact:
-            matches = a.loc[a['name'] == self._input_profile_name, :]  # locate profiles using exact string match.
+            filtered = a.loc[a['name'] == self._input_profile_name, :]  # locate profiles using exact string match.
         else:
-            matches = a.loc[a['name'].str.contains(self._input_profile_name), :]  # locate profiles with string in name.
-        if len(matches) == 1:
+            filtered = a.loc[a['name'].str.contains(self._input_profile_name), :]  # locate profiles with string in name.
+
+        # if only one row is found, set the class attributes using this row.
+        if len(filtered) == 1:
             print('Found a profile with the supplied profile number and name.')
-            self._guid = matches['id'].values[0]
-            self._current_version = matches['currentVersion'].values[0]
-            self._library = matches['library'].values[0]
-            self._profile_name = matches['name'].values[0]
-            self._local_id = matches['localId'].values[0]
+            self.__set_attributes(filtered)
             print('Profile name: {0}, profile number: {1}.'.format(self._profile_name, self._local_id))
-        elif len(matches) > 1:
+        # if more than one rows are found, print the matching profiles names and try again using an exact search.
+        elif len(filtered) > 1:
             template = "Found multiple profiles that could match {0}:\n\n {1}"
-            match_names = matches['name'].values
+            match_names = filtered['name'].values
             match_names_formatted = '\t' + '\n\t'.join(match_names)  # format a string for printing
             print(template.format(self._input_profile_name, match_names_formatted))
             print('Attempting exact string match.')
             self._search_by_name(exact=True)  # try again using exact string matching to pare down the results.
-        elif len(matches) == 0:
+        # if no profiles are found, return a lookup error.
+        elif len(filtered) == 0:
             template = "Did not find any profiles that could match {0}."
             raise LookupError(template.format(self._input_profile_name))
