@@ -25,7 +25,7 @@ def test_excess_profile_matches_by_profile_name():
     try:
         # There are multiple profiles with the exact name "Block-Cost Model Planned Fuel Components" in the mocked
         # data set.
-        p = Profile(c, sys, profile_name='Block-Cost Model Planned Fuel Components')
+        p = Profile(c, sys, profile_name='Duplicate Profile')
         assert 0  # should never get here.
     except LookupError:
         assert 1
@@ -56,23 +56,23 @@ def test_no_profile_matches_by_profile_number():
 @patch('emspy.query.ems.EMS.get_id', new=MockEMS.get_id)
 @patch('emspy.Connection.request', new=MockConnection.request)
 def test_one_profile_match_by_profile_name():
-    p = Profile(c, sys, profile_name='Block-Cost Model')  # no profile should match.
-    assert (p._profile_name == 'Block-Cost Model')
+    p = Profile(c, sys, profile_name='Single Real Profile')  # no profile should match.
+    assert (p._profile_name == 'Single Real Profile')
 
 
 @patch('emspy.query.ems.EMS.get_id', new=MockEMS.get_id)
 @patch('emspy.Connection.request', new=MockConnection.request)
 def test_one_profile_match_by_profile_number():
-    p = Profile(c, sys, profile_number=94)  # no profile should match.
-    assert (p._profile_name == 'Block-Cost Model Planned Fuel Setup and Tests')
+    p = Profile(c, sys, profile_number=108)  # no profile should match.
+    assert (p._profile_name == 'Single Real Profile 2')
 
 
 @patch('emspy.query.ems.EMS.get_id', new=MockEMS.get_id)
 @patch('emspy.Connection.request', new=MockConnection.request)
 def test_profile_attributes_by_profile_number():
-    p = Profile(c, sys, profile_number=88)  # no profile should match.
-    assert (p._profile_name == 'Block-Cost Model Planned Fuel Components')
-    assert (p._guid == '5b8d6db6-c8cb-474f-b951-4c8e39e6eba1')
+    p = Profile(c, sys, profile_number=88)  # one profile should match.
+    assert (p._profile_name == 'Duplicate Profile')
+    assert (p._guid == '5b8dc8cb-c8cb-c8cb-c8cb-c8cb39e6c8cb')
     assert (p._current_version == 9)
     assert (p._library == True)
     assert (p._local_id == 88)
@@ -81,9 +81,9 @@ def test_profile_attributes_by_profile_number():
 @patch('emspy.query.ems.EMS.get_id', new=MockEMS.get_id)
 @patch('emspy.Connection.request', new=MockConnection.request)
 def test_profile_attributes_by_profile_name():
-    p = Profile(c, sys, profile_name='Block-Cost Model Planned Fuel Setup and Tests')  # no profile should match.
-    assert (p._profile_name == 'Block-Cost Model Planned Fuel Setup and Tests')
-    assert (p._guid == 'b1ff12e2-a2ff-4da6-8bfb-adfbe8a14acc')
-    assert (p._current_version == 9)
+    p = Profile(c, sys, profile_name='Single Profile 3')  # one profile should match.
+    assert (p._profile_name == 'Single Profile 3')
+    assert (p._guid == 'f163eeee-63ee-63ee-63ee-1b363eed63ee')
+    assert (p._current_version == 8)
     assert (p._library == True)
-    assert (p._local_id == 94)
+    assert (p._local_id == 56)
