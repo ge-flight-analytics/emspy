@@ -7,7 +7,7 @@ A class for profile queries using the EMS REST API
 
 
 class Profile(Query):
-    def __init__(self, conn, ems_name, profile_number, profile_name=''):
+    def __init__(self, conn, ems_name, profile_number=None, profile_name=''):
         Query.__init__(self, conn, ems_name)
         self._conn = conn
         self._ems_name = ems_name
@@ -17,7 +17,14 @@ class Profile(Query):
         self._events_glossary = None
         self._input_profile_name = profile_name
         self._ems_id = self.get_ems_id()
-        self._search()
+
+        if profile_number is None and profile_name == '':
+            raise ValueError("Either profile_number, profile_name, or both must be specified.")
+
+        if profile_number is not None:
+            self._search_by_number()
+        else:
+            self._search_by_name()
 
     def get_glossary(self):
         if self._guid is not None:
@@ -66,7 +73,7 @@ class Profile(Query):
                   "system.  Please try to instantiate the profile object with different arguments.")
             return
 
-    def _search(self):
+    def _search_by_number(self):
         resp_h, dict_data = self._conn.request(uri_keys=('profile', 'search'), uri_args=self._ems_id,
                                                body={'search': self._input_profile_name})
         a = pd.DataFrame.from_dict(dict_data)
@@ -81,9 +88,38 @@ class Profile(Query):
             self._profile_name = filtered['name'].values[0]
             self._local_id = filtered['localId'].values[0]
             print('Profile name: {0}, profile number: {1}.'.format(self._profile_name, self._local_id))
-        elif len(filtered < 0):
+        elif len(filtered) < 0:
             print(
                 'No profile found with the supplied profile number and name.  Perhaps try without the name (it could'
                 ' take longer).')
-        elif len(filtered > 1):
+        elif len(filtered) > 1:
             print('Somehow found multiple profiles with the supplied name and number.')
+
+    def _search_by_name(self, exact=False):
+        resp_h, dict_data = self._conn.request(uri_keys=('profile', 'search'), uri_args=self._ems_id,
+                                               body={'search': self._input_profile_name})
+        a = pd.DataFrame.from_dict(dict_data)
+        self._search_results = a
+
+        if exact:
+            matches = a.loc[a['name'] == self._input_profile_name, :]  # locate profiles using exact string match.
+        else:
+            matches = a.loc[a['name'].str.contains(self._input_profile_name), :]  # locate profiles with string in name.
+        if len(matches) == 1:
+            print('Found a profile with the supplied profile number and name.')
+            self._guid = matches['id'].values[0]
+            self._current_version = matches['currentVersion'].values[0]
+            self._library = matches['library'].values[0]
+            self._profile_name = matches['name'].values[0]
+            self._local_id = matches['localId'].values[0]
+            print('Profile name: {0}, profile number: {1}.'.format(self._profile_name, self._local_id))
+        elif len(matches) > 1:
+            template = "Found multiple profiles that could match {0}:\n\n {1}"
+            match_names = matches['name'].values
+            match_names_formatted = '\t' + '\n\t'.join(match_names)  # format a string for printing
+            print(template.format(self._input_profile_name, match_names_formatted))
+            print('Attempting exact string match.')
+            self._search_by_name(exact=True)  # try again using exact string matching to pare down the results.
+        elif len(matches) == 0:
+            template = "Did not find any profiles that could match {0}."
+            raise LookupError(template.format(self._input_profile_name))
