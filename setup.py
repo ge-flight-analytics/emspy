@@ -13,6 +13,6 @@ setup(name = 'emspy',
       author_email = 'jimin96@gmail.com',
       license = 'MIT',
       packages = find_packages(),
-      install_requires = ['numpy', 'pandas', 'future'],
+      install_requires = ['numpy', 'pandas', 'future', 'networkx'],
       zip_safe = False)
       
