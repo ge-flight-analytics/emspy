@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import object
 from emspy.query import LocalData
 
 import networkx as nx
@@ -5,7 +7,7 @@ import pandas as pd
 import os, sys, re
 
 
-class Flight:
+class Flight(object):
     temp_exclude = ['Download Information', 'Download Review', 'Processing',
                     'Profile 16 Extra Data', 'Flight Review', 'Data Information',
                     'Operational Information', 'Operational Information (ODW2)',
@@ -25,7 +27,7 @@ class Flight:
         # Retreive the field tree data from local storage. If it doesn't exist, generate a new
         # default one.
         self.load_tree(data_file)
-        # Set default database      
+        # Set default database
         # self.set_database('fdw flight')
 
     def load_tree(self, file_name=None):
@@ -37,7 +39,7 @@ class Flight:
                 self._metadata.close()
                 self._metadata = LocalData(file_name)
 
-        self._trees = {'fieldtree': self.__get_fieldtree(), 
+        self._trees = {'fieldtree': self.__get_fieldtree(),
                        'dbtree'   : self.__get_dbtree(),
                        'kvmaps'   : self.__get_kvmaps()}
 
@@ -52,7 +54,7 @@ class Flight:
             copyfile(self._metadata.file_loc(), file_name)
             self._metadata.close()
             self._metadata = LocalData(file_name)
-        
+
         self.__save_fieldtree()
         self.__save_dbtree()
         self.__save_kvmaps()
@@ -91,7 +93,7 @@ class Flight:
     def __save_dbtree(self):
         if len(self._trees['dbtree']) > 0:
             self._metadata.delete_data("dbtree", "ems_id = %d" % self._ems_id)
-            self._metadata.append_data("dbtree", self._trees['dbtree'])        
+            self._metadata.append_data("dbtree", self._trees['dbtree'])
 
 
     def __get_kvmaps(self):
@@ -102,7 +104,7 @@ class Flight:
     def __save_kvmaps(self):
         if len(self._trees['kvmaps']) > 0:
             self._metadata.delete_data("kvmaps", "ems_id = %d" % self._ems_id)
-            self._metadata.append_data("kvmaps", self._trees['kvmaps'])     
+            self._metadata.append_data("kvmaps", self._trees['kvmaps'])
 
 
     def set_database(self, name):
@@ -115,7 +117,7 @@ class Flight:
             self.__update_children(self.get_database(), treetype = "fieldtree")
 
         print("Using database '%s'." % self.get_database()['name'])
-		
+
 
     def get_database(self):
 
@@ -133,21 +135,21 @@ class Flight:
                                        body=body)
         d1 = []
         if len(d['databases']) > 0:
-            d1 = map(lambda x: {'ems_id': parent['ems_id'],
+            d1 = [{'ems_id': parent['ems_id'],
                                 'id': x['id'],
                                 'nodetype': 'database',
                                 'name': x['pluralName'],
-                                'parent_id': parent['id']}, d['databases'])
+                                'parent_id': parent['id']} for x in d['databases']]
         d2 = []
         if len(d['groups']) > 0:
-            d2 = map(lambda x: {'ems_id': parent['ems_id'],
+            d2 = [{'ems_id': parent['ems_id'],
                                 'id': x['id'],
                                 'nodetype': 'database_group',
                                 'name': x['name'],
-                                'parent_id': parent['id']}, d['groups'])
+                                'parent_id': parent['id']} for x in d['groups']]
         return d1, d2
 
-    
+
     def __fl_request(self, parent):
         body = None
         if parent['nodetype'] == "field_group":
@@ -157,25 +159,25 @@ class Flight:
                                        body=body)
         d1 = []
         if len(d['fields']) > 0:
-            d1 = map(lambda x: {'ems_id': parent['ems_id'],
+            d1 = [{'ems_id': parent['ems_id'],
                                 'db_id' : self._db_id,
                                 'id': x['id'],
                                 'nodetype': 'field',
                                 'type': x['type'],
                                 'name': x['name'],
-                                'parent_id': parent['id']}, d['fields'])
+                                'parent_id': parent['id']} for x in d['fields']]
         d2 = []
         if len(d['groups']) > 0:
-            d2 = map(lambda x: {'ems_id': parent['ems_id'],
+            d2 = [{'ems_id': parent['ems_id'],
                                 'db_id': self._db_id,
                                 'id': x['id'],
                                 'nodetype': 'field_group',
                                 'type': None,
                                 'name': x['name'],
-                                'parent_id': parent['id']}, d['groups'])
+                                'parent_id': parent['id']} for x in d['groups']]
         return d1, d2
 
-    
+
     def __add_subtree(self, parent, exclude_tree=[], treetype = 'fieldtree'):
 
         print("On " + parent['name'] + "(" + parent['nodetype'] + ")" + "...")
@@ -183,7 +185,7 @@ class Flight:
         if treetype=="dbtree":
             searchtype = 'database'
             d1, d2 = self.__db_request(parent)
-                
+
         else:
             searchtype = "field"
             d1, d2 = self.__fl_request(parent)
@@ -223,7 +225,7 @@ class Flight:
         for i, x in chld[chld.nodetype!=leaftype].iterrows():
             self.__remove_subtree(x, treetype = treetype)
 
-    
+
     # def __remove_subtree(self, parent, rm_parent=True, treetype='fieldtree'):
 
     #     rm_list = list()
@@ -246,7 +248,7 @@ class Flight:
     #             parent['name'], parent['nodetype'], len(rm_list)))
 
 
-    
+
     def __update_children(self, parent, treetype='fieldtree'):
         '''
         This function updates the direct children of a parent node.
@@ -256,7 +258,7 @@ class Flight:
         if treetype=="dbtree":
             searchtype = 'database'
             d1, d2 = self.__db_request(parent)
-                
+
         else:
             searchtype = "field"
             d1, d2 = self.__fl_request(parent)
@@ -268,7 +270,7 @@ class Flight:
             self._trees[treetype] = self._trees[treetype].append(d1, ignore_index=True)
             plural = "s" if len(d1) > 1 else ""
             print("-- Added %d %s%s" % (len(d1), searchtype, plural))
-        
+
         # If there is an array of groups as children add any that appeared new and remove who does not.
         old_groups = T[(T.nodetype == '%s_group' % searchtype) & (T.parent_id == parent['id'])]
         old_ones = old_groups["id"].tolist()
@@ -281,7 +283,7 @@ class Flight:
         add_id = listdiff(new_ones, old_ones)
         if len(add_id) > 0:
             self._trees[treetype] = self._trees[treetype].append([x for x in d2 if x['id'] in add_id])
-        
+
 
 
     def update_tree(self, *args, **kwargs):
@@ -289,7 +291,7 @@ class Flight:
         Optional arguments
         ------------------
 
-        treetype : 
+        treetype :
             "fieldtree" or "dbtree"
 
         exclude_tree:
@@ -317,13 +319,13 @@ class Flight:
                 parent = child
             if len(parent) == 0:
                 raise ValueError("Search keyword '%s' did not return any %s group." % (p, searchtype))
-            ptype  = "%s_group" % searchtype    
-            parent = parent[parent.nodetype == ptype]    
+            ptype  = "%s_group" % searchtype
+            parent = parent[parent.nodetype == ptype]
             parent = get_shortest(parent)
 
-        print "=== Starting to update subtree from '%s (%s)' ===" % (parent['name'], parent['nodetype'])
+        print("=== Starting to update subtree from '%s (%s)' ===" % (parent['name'], parent['nodetype']))
         self.__remove_subtree(parent, treetype=treetype)
-        
+
         self.__add_subtree(parent, exclude_tree, treetype=treetype)
 
 
@@ -337,10 +339,10 @@ class Flight:
 
     def search_fields(self, *args, **kwargs):
         '''
-        This function search through the field names and returns a list of tuples with 
-        (field_name, field_info). The input arg is a "keyword" for the field name. You can 
+        This function search through the field names and returns a list of tuples with
+        (field_name, field_info). The input arg is a "keyword" for the field name. You can
         also add parent field group names as n-tuple.
-        
+
         ex)
         ---
         search_fields("Takeoff Airport Code", "Landing Airport Code")
@@ -410,8 +412,8 @@ class Flight:
             km = content['discreteValues']
             kmap = pd.DataFrame({'ems_id': self._ems_id,
                                  'id': fld_id,
-                                 'key': km.keys(),
-                                 'value': km.values()})
+                                 'key': list(km.keys()),
+                                 'value': list(km.values())})
             kmap['key'] = pd.to_numeric(kmap['key'])
 
             self._trees['kvmaps'] = self._trees['kvmaps'].append(kmap, ignore_index=True)

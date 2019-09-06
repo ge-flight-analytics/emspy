@@ -1,7 +1,8 @@
+from builtins import object
 from emspy.query import *
 
 
-class Query:
+class Query(object):
 
 	def __init__(self, conn, ems_name):
 
@@ -22,6 +23,8 @@ class Query:
 
 		self.__ems = EMS(self._conn)
 
+	def get_ems_id(self):
+		return self._ems_id
 
 	def _init_assets(self):
 

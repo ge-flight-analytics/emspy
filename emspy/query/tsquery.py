@@ -1,7 +1,11 @@
+from __future__ import print_function
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
 from emspy.query import *
-from query import Query
+from .query import Query
 
-import cPickle
+import pickle
 import warnings
 import pandas as pd
 import numpy as np
@@ -67,7 +71,8 @@ class TSeriesQuery(Query):
         self.__queryset['offsets'] = tpoint
 
 
-    def run(self, flight, start = None, end = None, timestep = None, timepoint = None):
+    def run(self, flight, start = None, end = None, timestep = None, timepoint = None,
+            discretes_as_strings=True):
 
         # if start is None:
         #     start = 0.0
@@ -85,6 +90,12 @@ class TSeriesQuery(Query):
         if timepoint is not None:
             self.timepoint(timepoint)
 
+        # allow the user to specify discretesAsStrings = 'false'
+        # per the EMS API documentation, discretesAsStrings is true by default.  So it will only get set to false if
+        # that option is specified.  This will allow users to return discretes in time series parameters as int values.
+        if not discretes_as_strings:
+            self.__queryset['discretesAsStrings'] = 'false'
+
         elif timestep is not None:
             start = 0.0 if start is None else start
 
@@ -100,7 +111,7 @@ class TSeriesQuery(Query):
                                               uri_args = (self._ems_id, flight),
                                               jsondata = self.__queryset)
 
-        if content.has_key('message'):
+        if 'message' in content:
             sys.exit('API query for flight %d was unsuccessful.\nHere is the message from API: %s' % (flight, content['message']))
         
         # Put the data in Pandas DataFrame
@@ -138,7 +149,7 @@ class TSeriesQuery(Query):
         if verbose: print('\n=== Start running time-series data querying for %d flights ===\n' % len(FR))
         
         for i, fr in enumerate(FR):
-            if verbose: print '\r\x1b[K%d / %d: FR %d' % (i+1, len(FR), fr),
+            if verbose: print('\r\x1b[K%d / %d: FR %d' % (i+1, len(FR), fr), end=' ')
             i_res = dict()
             if attr_flag:
                 i_res['flt_data'] = flight.iloc[i,:].to_dict()
@@ -148,8 +159,8 @@ class TSeriesQuery(Query):
             res.append(i_res)
 
             if save_file is not None:
-                cPickle.dump(res, open(save_file, 'wb'))
-        if verbose: print 'Done'
+                pickle.dump(res, open(save_file, 'wb'))
+        if verbose: print('Done')
 
         return res
 
@@ -173,7 +184,7 @@ class TSeriesQuery(Query):
         resp_h, content = self._conn.request( uri_keys = ("analytic", "query"),
                                               uri_args = (self._ems_id, flight),
                                               jsondata = q)
-        if content.has_key('message'):
+        if 'message' in content:
             sys.exit('API query for flight %d, parameter = "%s" was unsuccessful.\nHere is the message from API: %s' % (flight, p['name'], content['message']))
         fl_len = content['results'][0]['values'][0]
 

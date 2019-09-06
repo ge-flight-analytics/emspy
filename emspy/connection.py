@@ -1,10 +1,18 @@
-import json, urllib, urllib2, ssl, sys, StringIO, gzip
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import map
+from builtins import object
+import json, urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse, ssl, sys, io, gzip
+from numbers import Number
 import pprint as pp
-import common
+from . import common
 
 
 
-class Connection:
+class Connection(object):
 	'''
 	Object for connection to EMS API
 	'''
@@ -38,9 +46,9 @@ class Connection:
 		Connect to EMS system using given credentials.
 		'''
 		if proxies is not None:
-			proxy_handler = urllib2.ProxyHandler(proxies)
-			opener = urllib2.build_opener(proxy_handler, urllib2.HTTPHandler)
-			urllib2.install_opener(opener)	
+			proxy_handler = urllib.request.ProxyHandler(proxies)
+			opener = urllib.request.build_opener(proxy_handler, urllib.request.HTTPHandler)
+			urllib.request.install_opener(opener)	
 
 		headers = {'Content-Type':'application/x-www-form-urlencoded', 'User-Agent':common.user_agent}
 		data   = {'grant_type': 'password', 'username': user, 'password': pwd}
@@ -85,26 +93,34 @@ class Connection:
 		if uri_args is not None:
 			# uri    = uri % uri_args
 			# Unencoded url does not work all of sudden...
-			encode_args = lambda x: urllib.quote(x) if type(x) in (str, unicode) else x
-			if type(uri_args) in (list, tuple):
-				uri = uri % tuple(map(encode_args, uri_args))
-			else:
-				uri = uri % encode_args(uri_args)
-
+			
+			# encode_args = lambda x: urllib.parse.quote(x) if type(x) in (str, unicode) else x
+			# if type(uri_args) in (list, tuple):
+			# 	uri = uri % tuple(map(encode_args, uri_args))
+			# else:
+			# 	uri = uri % encode_args(uri_args)
+			
+			if type(uri_args) not in (list, tuple):
+				uri_args = [uri_args]
+				
+			uri_args = [x if isinstance(x, Number) else urllib.parse.quote(x) \
+						for x in uri_args]
+			uri = uri % tuple(uri_args)
+			
 		# Append query to the uri if body is given
 		if body is not None:
-			uri    = uri + "?" + urllib.urlencode(body)
+			uri    = uri + "?" + urllib.parse.urlencode(body)
 
 		# Encode the data
 		if data is not None:
-			data 	= urllib.urlencode(data)
+			data 	= urllib.parse.urlencode(data).encode('utf-8')
 
 		if jsondata is not None:
 			headers['Content-Type'] = 'application/json'
-			data = json.dumps(jsondata)
+			data = json.dumps(jsondata).encode('utf-8')
 
-
-		req = urllib2.Request(uri, data=data, headers=headers)
+		# uri = uri.encode('utf-8')
+		req = urllib.request.Request(uri, data=data, headers=headers)
 		try:
 			resp = self.__send_request(req)
 			statcode = resp.getcode()
@@ -121,11 +137,11 @@ class Connection:
 			self.reconnect()
 			print("Done.")
 			resp = self.__send_request(req)
-		resp_h   = resp.info().headers
+		resp_h   = resp.getheaders()
 
 		# If the response is compressed, decompress it.
 		if resp.info().get('Content-Encoding') == 'gzip':
-			buffer = StringIO.StringIO(resp.read())
+			buffer = io.BytesIO(resp.read())
 			file = gzip.GzipFile(fileobj=buffer)
 			content = json.loads(file.read())
 		else:
@@ -144,8 +160,16 @@ class Connection:
 
 		# Normally you do NOT want to ignore SSL errors, but this is
 		# sometimes necessary on beta API endpoints without a proper cert.
-		return urllib2.urlopen(req,
-							   context = ssl._create_unverified_context() if self.__ignore_ssl_errors else None)
+		# TODO: Find a real fix for GE Mac OS machines that are having trouble verifying.  
+		request = None
+		if self.__ignore_ssl_errors:
+			try:
+				request = urllib.request.urlopen(req, context=None)
+			except urllib.error.URLError:
+				request = urllib.request.urlopen(req, context=ssl._create_unverified_context())
+		else:
+			request = urllib.request.urlopen(req, context=None)
+		return request
 
 
 def print_resp(resp):

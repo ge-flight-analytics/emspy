@@ -1,7 +1,8 @@
+from builtins import object
 import pandas as pd
 
 
-class Asset:
+class Asset(object):
 	'''
 	Super class of all "asset" classes and the EMS class. It is a template class so 
 	should not be instantiated directly.

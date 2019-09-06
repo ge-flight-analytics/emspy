@@ -1,4 +1,5 @@
-from asset import Asset
+from __future__ import absolute_import
+from .asset import Asset
 
 
 class Aircraft(Asset):

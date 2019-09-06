@@ -1,3 +1,4 @@
+from builtins import object
 import emspy
 
 import pandas as pd
@@ -5,7 +6,7 @@ import numpy as np
 import os, sys, re, sqlite3
 
 
-class LocalData:
+class LocalData(object):
 	table_info = {
 		"fieldtree": ["ems_id", "db_id", "id", "nodetype", "type", "name", "parent_id" ],
 		"dbtree"   : ["ems_id", "id", "nodetype", "name", "parent_id"],
@@ -81,7 +82,7 @@ class LocalData:
 
 	def delete_all_tables(self):
 
-		for table_name in LocalData.table_info.keys():
+		for table_name in list(LocalData.table_info.keys()):
 			if table_exists(table_name):
 				self._conn.execute("DROP TABLE %s" % table_name)
 		self._conn.commit()
@@ -91,7 +92,7 @@ class LocalData:
 
 		cursor = self._conn.cursor()
 		cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-		tables = map(lambda t: t[0], cursor.fetchall())
+		tables = [t[0] for t in cursor.fetchall()]
 		return table_name in tables
 
 

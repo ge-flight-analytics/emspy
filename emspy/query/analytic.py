@@ -1,10 +1,13 @@
+from __future__ import print_function
+from builtins import range
+from builtins import object
 import pandas as pd
 import numpy as np
 import os, sys, re
 import emspy
 from emspy.query import LocalData
 
-class Analytic:
+class Analytic(object):
 
 	def __init__(self, conn, ems_id, data_file = None):
 		self._conn        = conn
@@ -31,7 +34,7 @@ class Analytic:
 
 
 	def search_param(self, keyword, in_df = False):
-		print 'Searching for params with keyword "%s" from EMS ...' % keyword,
+		print('Searching for params with keyword "%s" from EMS ...' % keyword, end=' ')
 		# EMS API Call
 		resp_h, content = self._conn.request( uri_keys=('analytic', 'search'),
 											  uri_args=self._ems_id,
@@ -44,7 +47,7 @@ class Analytic:
 			word_len     = [len(x['name']) for x in content]
 			idx          = np.argsort(word_len).tolist()
 			res          = [content[i] for i in idx]
-		print "done."
+		print("done.")
 
 		for i in range(len(res)):
 			res[i]['ems_id'] = self._ems_id
