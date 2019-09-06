@@ -128,7 +128,7 @@ class Profile(Query):
             if self._exact_search is True:  # name + exact search
                 # locate profiles using exact string match.
                 filtered = res.loc[res['name'] == self._input_profile_name, :]
-            elif self._exact_search is False:  # name + inexact search
+            else:  # name + inexact search
                 # locate profiles with string in name (case insensitive).
                 res['name_lower'] = res['name'].str.lower()
                 filtered = res.loc[res['name_lower'].str.contains(self._input_profile_name.lower()), :]
@@ -147,14 +147,15 @@ class Profile(Query):
             self.__set_profile_attributes(filtered)
         # if more than one rows are found (shouldn't be possible) either try again (if we are searching by name in an
         # inexact manner, we will now try an exact search) or return a LookupError.
-        # Inexact search could learn to more than one match, leaving the potential for an exact search to narrow to one.
+        # Inexact search could lead to more than one match, leaving the potential for an exact search to narrow to one.
+        # It should not be possible to have more than one match if you are searching with a profile number.
         elif len(filtered) > 1:
             match_names = filtered['name'].values
             match_profiles = filtered['localId'].values
             match_strings = ['P' + str(pnum) + ': ' + name for pnum, name in zip(match_profiles, match_names)]
             match_names_formatted = '\t' + '\n\t'.join(match_strings)  # format a string for printing
             print(self._many_matches_name_template.format(self._input_profile_name, match_names_formatted))
-            if self._search_type == 'name' and self._exact_search is False:
+            if self._exact_search is False:
                 print('Attempting exact string match.')
                 self._exact_search = True
                 filtered = self.__filter_results(filtered)  # try using exact string matching to pare down results.
