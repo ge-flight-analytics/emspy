@@ -16,11 +16,10 @@ proxies = {
 
 c = MockConnection(user=user_name, pwd=pwd, proxies=proxies)
 
-
-@patch('emspy.query.ems.EMS.update_list', new=MockEMS.update_list)
-@patch('emspy.query.ems.EMS.get_id', new=MockEMS.get_id)
-@patch('emspy.Connection.request', new=MockConnection.request)
-
+# @patch() decorator replaces an object with a mock object for the test it decorates
+# For more information on how to use @patch, see https://stackoverflow.com/questions/32461465/python-patch-not-working
+@patch('emspy.query.query.EMS', MockEMS)
+@patch('emspy.Connection', MockConnection)
 def test_excess_profile_matches_by_profile_name():
     try:
         # There are multiple profiles with the exact name "Duplicate Profile" in the mocked data set.
@@ -30,9 +29,8 @@ def test_excess_profile_matches_by_profile_name():
         assert True
 
 
-@patch('emspy.query.ems.EMS.update_list', new=MockEMS.update_list)
-@patch('emspy.query.ems.EMS.get_id', new=MockEMS.get_id)
-@patch('emspy.Connection.request', new=MockConnection.request)
+@patch('emspy.query.query.EMS', MockEMS)
+@patch('emspy.Connection', MockConnection)
 def test_no_profile_matches_by_profile_name():
     try:
         # Obviously a profile that would never exist.
@@ -42,9 +40,8 @@ def test_no_profile_matches_by_profile_name():
         assert True
 
 
-@patch('emspy.query.ems.EMS.update_list', new=MockEMS.update_list)
-@patch('emspy.query.ems.EMS.get_id', new=MockEMS.get_id)
-@patch('emspy.Connection.request', new=MockConnection.request)
+@patch('emspy.query.query.EMS', MockEMS)
+@patch('emspy.Connection', MockConnection)
 def test_no_profile_matches_by_profile_number():
     try:
         # Obviously a profile that would never exist.
@@ -54,25 +51,22 @@ def test_no_profile_matches_by_profile_number():
         assert True
 
 
-@patch('emspy.query.ems.EMS.update_list', new=MockEMS.update_list)
-@patch('emspy.query.ems.EMS.get_id', new=MockEMS.get_id)
-@patch('emspy.Connection.request', new=MockConnection.request)
+@patch('emspy.query.query.EMS', MockEMS)
+@patch('emspy.Connection', MockConnection)
 def test_one_profile_match_by_profile_name():
     p = Profile(c, sys, profile_name='Single Real Profile')  # no profile should match.
     assert (p._profile_name == 'Single Real Profile')
 
 
-@patch('emspy.query.ems.EMS.update_list', new=MockEMS.update_list)
-@patch('emspy.query.ems.EMS.get_id', new=MockEMS.get_id)
-@patch('emspy.Connection.request', new=MockConnection.request)
+@patch('emspy.query.query.EMS', MockEMS)
+@patch('emspy.Connection', MockConnection)
 def test_one_profile_match_by_profile_number():
     p = Profile(c, sys, profile_number=108)  # one profile should match.
     assert (p._profile_name == 'Single Real Profile 2')
 
 
-@patch('emspy.query.ems.EMS.update_list', new=MockEMS.update_list)
-@patch('emspy.query.ems.EMS.get_id', new=MockEMS.get_id)
-@patch('emspy.Connection.request', new=MockConnection.request)
+@patch('emspy.query.query.EMS', MockEMS)
+@patch('emspy.Connection', MockConnection)
 def test_profile_attributes_by_profile_number():
     p = Profile(c, sys, profile_number=88)  # one profile should match.
     assert (p._profile_name == 'Duplicate Profile')
@@ -82,9 +76,8 @@ def test_profile_attributes_by_profile_number():
     assert (p._local_id == 88)
 
 
-@patch('emspy.query.ems.EMS.update_list', new=MockEMS.update_list)
-@patch('emspy.query.ems.EMS.get_id', new=MockEMS.get_id)
-@patch('emspy.Connection.request', new=MockConnection.request)
+@patch('emspy.query.query.EMS', MockEMS)
+@patch('emspy.Connection', MockConnection)
 def test_profile_attributes_by_profile_name():
     p = Profile(c, sys, profile_name='Single Profile 3')  # one profile should match.
     assert (p._profile_name == 'Single Profile 3')
@@ -94,13 +87,11 @@ def test_profile_attributes_by_profile_name():
     assert (p._local_id == 56)
 
 
-@patch('emspy.query.ems.EMS.update_list', new=MockEMS.update_list)
-@patch('emspy.query.ems.EMS.get_id', new=MockEMS.get_id)
-@patch('emspy.Connection.request', new=MockConnection.request)
+@patch('emspy.query.query.EMS', MockEMS)
+@patch('emspy.Connection', MockConnection)
 def test_bad_profile_name_search():
     try:
         p = Profile(c, sys, profile_name='A PROFILE THAT SHOULD NEVER EXIST')  # no profiles should match.
         assert False
     except LookupError:
         assert True
-
