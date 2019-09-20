@@ -132,6 +132,12 @@ class Connection(object):
 			if eType is ssl.CertificateError:
 				print("A certificate verification error occured for the request to '%s'. Certificate verification is required by default, but can be disabled by using the ignore_ssl_errors argument for the Connection constructor." % uri )
 				raise
+			if eType is urllib.error.HTTPError:
+				message_bytes = eValue.read()
+				message_str = message_bytes.decode('utf-8')
+				# TODO: Determine if this should be a print or somehow embedded in the original exception.
+				print("Received a {0} response from the server with the message: {1}.".format(eValue.code, message_str))
+				raise
 
 			print("Trying to reconnect the EMS API.")
 			self.reconnect()

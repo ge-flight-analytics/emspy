@@ -33,7 +33,86 @@ class TSeriesQuery(Query):
         self.__queryset = {'select':[]}
 
 
+    def select_ids(self, analytic_ids, names, descriptions=None, units=None, lookup=False):
+        """
+        A method for selecting parameters to query for by analytic_id.  This method adds analytics and relevant
+        information as provided.  It can also query the EMS API for relevant information if requested.
+
+        Args:
+            analytic_ids (:obj:`list` of :obj:`str`): A list of analytic_ids to select and query for.
+            names (:obj:`list` of :obj:`str`): A list of names for each analytic_id in analytic_ids.
+
+            descriptions (:obj:`list` of :obj:`str`, optional): A list of descriptions for each analytic_id in
+                analytic_ids.
+            units (:obj:`list` of :obj:`str`, optional): A list of units for each analytic_id in analytic_ids.
+            names (:obj:`list` of :obj:`str`, optional): A list of names for each analytic_id in analytic_ids.
+            lookup (:obj:`bool`, optional): Whether or not to look up names, descriptions and units using the EMS API.
+        Raises:
+            ValueError: If `analytic_ids`, `names`, `descriptions` (if specified), and `units` (if specified) are not
+                of the same length.
+        """
+
+        # If the input parameters are both strings, then we will cast them into lists so we can proceed as normal
+        # (i.e. loop through them [once])
+        if isinstance(analytic_ids, str):
+            analytic_ids = [analytic_ids]
+            names = [names]
+            if descriptions is not None:
+                descriptions = [descriptions]
+            if units is not None:
+                units = [units]
+
+        # calculate the length of each input list
+        # descriptions and units aren't necessarily input lists (could be None), but they are necessarily the same
+        # length as analytic_ids
+        lengths = {'analytic_ids': len(analytic_ids), 'names': len(names)}
+        if descriptions is not None:
+            lengths['descriptions'] = len(descriptions)
+        if units is not None:
+            lengths['units'] = len(units)
+
+        length_set = set(lengths.values())  # This is a set of unique lengths
+
+        # If there is more than one unique iterable length, then one must be off.
+        if len(length_set) > 1:
+            error_str = ''
+            for list_name, list_length in lengths.items():
+                error_str = error_str + '\t\t{0:15}: {1}\n'.format(list_name, str(list_length))
+            raise ValueError("All lists must be of the same length.  Found lengths:\n{0}".format(error_str))
+
+        # Fill out lists with empty strings that are the same length as the analytic_ids list
+        descriptions = ['']*len(analytic_ids) if descriptions is None else descriptions
+        units = ['']*len(analytic_ids) if units is None else units
+
+        # loop over items
+        for analytic_id, name, description, unit in zip(analytic_ids, names, descriptions, units):
+            # if we aren't performing a lookup, just stuff in the lists that have been passed in.
+            if not lookup:
+                prm = {'id': analytic_id, 'name': name, 'description': description, 'units': unit, 'ems_id': self._ems_id}
+                df = pd.DataFrame(prm, index=[0])
+            # if we are performing a lookup, we need to make an API call to get relevant data.
+            else:
+                prm = self.__analytic.get_param_details(analytic_id)
+
+            self.__analytic._param_table = self.__analytic._param_table.append(df, ignore_index=True)
+
+            # Put the param into JSON query string
+            self.__queryset['select'].append({'analyticId': prm['id']})
+            # Just in case you want to check what params are selected
+            self.__columns.append(prm)
+
+            self.__analytic._save_paramtable()
+
+
     def select(self, *args):
+        """
+        A method for selecting parameters to query for by name.  This method searches for parameters by name and adds
+        them to the current query.  If multiple matches for a given parameter are found, the match with the shortest
+        name is selected.
+
+        Args:
+            *args (:obj:`list` of :obj:`str`): Variable length argument list of parameter names.
+        """
 
         keywords   = args
         save_table = False
