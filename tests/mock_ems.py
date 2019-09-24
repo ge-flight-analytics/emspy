@@ -2,6 +2,10 @@ from __future__ import absolute_import
 
 
 class MockEMS(object):
+
+    def __init__(self, conn):
+        pass
+
     def update_list(self):
         pass
 
