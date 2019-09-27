@@ -52,7 +52,7 @@ class TSeriesQuery(Query):
                 of the same length.
             ValueError: If `analytic_ids`, and `names` are not both defined, unless `lookup=True` is specified, in which
                 case names can be None.
-            ValueError: If `analytic_ids` is a string, but `names`, `descriptions`, and `units` are specified as
+            TypeError: If `analytic_ids` is a string, but `names`, `descriptions`, and `units` are specified as
                 something other than strings.
         """
 
@@ -68,7 +68,7 @@ class TSeriesQuery(Query):
                 if isinstance(names, str):
                     names = [names]
                 else:
-                    raise ValueError("If a string is passed for `analytic_ids`, `names` must be a string as well.")
+                    raise TypeError("If a string is passed for `analytic_ids`, `names` must be a string as well.")
 
             # if descriptions is not None, and descriptions is not a string type object, raise an error.
             if descriptions is not None:

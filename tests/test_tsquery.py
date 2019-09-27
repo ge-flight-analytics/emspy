@@ -62,7 +62,7 @@ LOOKUP TESTS
 
 @patch('emspy.query.query.EMS', MockEMS)
 @patch('emspy.Connection', MockConnection)
-def test_analytic_id_with_lookup_adds_units():
+def test_analytic_id_with_lookup_using_select_ids_adds_units():
     sys = 'ems24-app'
     ems_id = 24
     analytic_id = 'fake-bar-alt-id-that-exists='
@@ -83,7 +83,7 @@ def test_analytic_id_with_lookup_adds_units():
 
 @patch('emspy.query.query.EMS', MockEMS)
 @patch('emspy.Connection', MockConnection)
-def test_analytic_id_with_lookup_adds_description():
+def test_analytic_id_with_lookup_using_select_ids_adds_description():
     sys = 'ems24-app'
     ems_id = 24
     analytic_id = 'fake-bar-alt-id-that-exists='
@@ -106,7 +106,7 @@ def test_analytic_id_with_lookup_adds_description():
 
 @patch('emspy.query.query.EMS', MockEMS)
 @patch('emspy.Connection', MockConnection)
-def test_analytic_id_with_lookup_adds_name():
+def test_analytic_id_with_lookup_using_select_ids_adds_name():
     sys = 'ems24-app'
     ems_id = 24
     analytic_id = 'fake-bar-alt-id-that-exists='
@@ -131,7 +131,7 @@ INCORRECT ID TESTS
 
 @patch('emspy.query.query.EMS', MockEMS)
 @patch('emspy.Connection', MockConnection)
-def test_analytic_id_doesnt_exist_with_lookup():
+def test_analytic_id_doesnt_exist_with_lookup_using_select_ids():
     sys = 'ems24-app'
     analytic_id = 'fake-pressure-alt-id-that-DOES-NOT-exist='
     name = 'pressure altitude?'
@@ -154,7 +154,7 @@ PARAMETER EDGE CASE TESTS
 
 @patch('emspy.query.query.EMS', MockEMS)
 @patch('emspy.Connection', MockConnection)
-def test_analytic_id_select_no_names_no_lookup():
+def test_analytic_id_returns_error_using_select_ids_with_no_names_and_no_lookup():
     sys = 'ems24-app'
     analytic_id = 'fake-bar-alt-id-that-exists='
     c = MockConnection(user='', pwd='')
@@ -203,7 +203,7 @@ def test_passing_mix_of_strings_and_lists_to_select_ids():
     try:
         tsq.select_ids(analytic_ids, names, lookup=True)
         assert False  # Should not be able to select ids with different length lists
-    except ValueError as e:
+    except TypeError as e:
         assert True
     finally:
         # destroy
