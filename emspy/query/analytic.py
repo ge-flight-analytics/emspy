@@ -33,6 +33,12 @@ class Analytic(object):
 			self._metadata.append_data("params", self._param_table)
 
 
+	def get_param_details(self, analytic_id):
+		resp_h, content = self._conn.request(rtype="POST", uri_keys=('analytic', 'search'), uri_args=self._ems_id,
+											 jsondata={'id': analytic_id})
+
+		return content
+
 	def search_param(self, keyword, in_df = False):
 		print('Searching for params with keyword "%s" from EMS ...' % keyword, end=' ')
 		# EMS API Call
