@@ -6,8 +6,6 @@ import numpy as np
 import os, sys, re
 import emspy
 from emspy.query import LocalData
-from urllib.error import HTTPError as HTTPError
-import json
 
 class Analytic(object):
 
