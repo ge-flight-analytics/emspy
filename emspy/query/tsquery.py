@@ -56,8 +56,11 @@ class TSeriesQuery(Query):
                 something other than strings.
         """
 
+        # We require names if we are not going to look up metadata about the analytic_ids.
+        # We could just allow adding analytic_ids, but the user will likely have to pair the results up with names
+        # information anyway, so it might as well be provided to the select_ids method for a more friendly experience.
         if names is None and not lookup:
-            raise ValueError("If `names` is not specified, you must set `lookup=True`")
+            raise ValueError("If `names` is not specified, you must set `lookup`=True")
 
         # If the input parameters are both strings, then we will cast them into lists so we can proceed as normal
         # (i.e. loop through them [once])
@@ -98,14 +101,14 @@ class TSeriesQuery(Query):
 
         length_set = set(lengths.values())  # This is a set of unique lengths
 
-        # If there is more than one unique iterable length, then one must be off.
+        # If there is more than one unique iterable length, then one must be wrong.  Return an error.
         if len(length_set) > 1:
             error_str = ''
             for list_name, list_length in lengths.items():
                 error_str = error_str + '\t\t{0:15}: {1}\n'.format(list_name, str(list_length))
             raise ValueError("All lists must be of the same length.  Found lengths:\n{0}".format(error_str))
 
-        # Fill out lists with empty strings that are the same length as the analytic_ids list
+        # Fill out lists with empty strings that are the same length as the analytic_ids list, if parameters are None.
         names = ['']*len(analytic_ids) if names is None else names
         descriptions = ['']*len(analytic_ids) if descriptions is None else descriptions
         units = ['']*len(analytic_ids) if units is None else units
