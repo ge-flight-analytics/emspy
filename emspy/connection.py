@@ -135,8 +135,7 @@ class Connection(object):
 			if eType is urllib.error.HTTPError:
 				message_bytes = eValue.read()
 				message_str = message_bytes.decode('utf-8')
-				# TODO: Determine if this should be a print or somehow embedded in the original exception.
-				print("Received a {0} response from the server with the message: {1}.".format(eValue.code, message_str))
+				eValue.msg = eValue.msg + '\n Details: ' + message_str
 				raise
 
 			print("Trying to reconnect the EMS API.")

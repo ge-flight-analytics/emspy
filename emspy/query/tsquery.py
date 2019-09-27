@@ -33,7 +33,7 @@ class TSeriesQuery(Query):
         self.__queryset = {'select':[]}
 
 
-    def select_ids(self, analytic_ids, names, descriptions=None, units=None, lookup=False):
+    def select_ids(self, analytic_ids, names=None, descriptions=None, units=None, lookup=False):
         """
         A method for selecting parameters to query for by analytic_id.  This method adds analytics and relevant
         information as provided.  It can also query the EMS API for relevant information if requested.
@@ -50,22 +50,47 @@ class TSeriesQuery(Query):
         Raises:
             ValueError: If `analytic_ids`, `names`, `descriptions` (if specified), and `units` (if specified) are not
                 of the same length.
+            ValueError: If `analytic_ids`, and `names` are not both defined, unless `lookup=True` is specified, in which
+                case names can be None.
+            ValueError: If `analytic_ids` is a string, but `names`, `descriptions`, and `units` are specified as
+                something other than strings.
         """
+
+        if names is None and not lookup:
+            raise ValueError("If `names` is not specified, you must set `lookup=True`")
 
         # If the input parameters are both strings, then we will cast them into lists so we can proceed as normal
         # (i.e. loop through them [once])
         if isinstance(analytic_ids, str):
             analytic_ids = [analytic_ids]
-            names = [names]
+            # if names is not None, and names is not a string type object, raise an error.
+            if names is not None:
+                if isinstance(names, str):
+                    names = [names]
+                else:
+                    raise ValueError("If a string is passed for `analytic_ids`, `names` must be a string as well.")
+
+            # if descriptions is not None, and descriptions is not a string type object, raise an error.
             if descriptions is not None:
-                descriptions = [descriptions]
+                if isinstance(descriptions, str):
+                    descriptions = [descriptions]
+                else:
+                    raise ValueError("If a string is passed for `analytic_ids`, `descriptions` must be a string as "
+                                     "well.")
+
+            # if units is not None, and units is not a string type object, raise an error.
             if units is not None:
-                units = [units]
+                if isinstance(units, str):
+                    units = [units]
+                else:
+                    raise ValueError("If a string is passed for `analytic_ids`, `units` must be a string as well.")
 
         # calculate the length of each input list
         # descriptions and units aren't necessarily input lists (could be None), but they are necessarily the same
         # length as analytic_ids
-        lengths = {'analytic_ids': len(analytic_ids), 'names': len(names)}
+        lengths = {'analytic_ids': len(analytic_ids)}
+        if names is not None:
+            lengths['names'] = len(names)
         if descriptions is not None:
             lengths['descriptions'] = len(descriptions)
         if units is not None:
@@ -81,6 +106,7 @@ class TSeriesQuery(Query):
             raise ValueError("All lists must be of the same length.  Found lengths:\n{0}".format(error_str))
 
         # Fill out lists with empty strings that are the same length as the analytic_ids list
+        names = ['']*len(analytic_ids) if names is None else names
         descriptions = ['']*len(analytic_ids) if descriptions is None else descriptions
         units = ['']*len(analytic_ids) if units is None else units
 
@@ -88,11 +114,13 @@ class TSeriesQuery(Query):
         for analytic_id, name, description, unit in zip(analytic_ids, names, descriptions, units):
             # if we aren't performing a lookup, just stuff in the lists that have been passed in.
             if not lookup:
-                prm = {'id': analytic_id, 'name': name, 'description': description, 'units': unit, 'ems_id': self._ems_id}
-                df = pd.DataFrame(prm, index=[0])
+                prm = {'id': analytic_id, 'name': name, 'description': description, 'units': unit,
+                       'ems_id': self._ems_id}
             # if we are performing a lookup, we need to make an API call to get relevant data.
             else:
                 prm = self.__analytic.get_param_details(analytic_id)
+                prm['ems_id'] = self._ems_id
+            df = pd.DataFrame(prm, index=[0])
 
             self.__analytic._param_table = self.__analytic._param_table.append(df, ignore_index=True)
 
@@ -276,3 +304,14 @@ class TSeriesQuery(Query):
         else:
             sys.exit("Unrecognizable time unit (%s)." % unit)
         return t
+
+    def get_queryset(self):
+        """
+        Returns a dictionary with the queryset for the current time series query.
+
+        Returns:
+            list: a list describing the current queryset.
+        """
+
+        return self.__queryset
+

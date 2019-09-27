@@ -34,9 +34,8 @@ class Analytic(object):
 			self._metadata.delete_data("params", "ems_id = %d" % self._ems_id)
 			self._metadata.append_data("params", self._param_table)
 
-	def get_param_details(self, analytic_id):
-		#TODO: Mock this, what if the analytic_id isn't valid?  You get a 500 response.  How should we handle?
 
+	def get_param_details(self, analytic_id):
 		resp_h, content = self._conn.request(rtype="POST", uri_keys=('analytic', 'search'), uri_args=self._ems_id,
 											 jsondata={'id': analytic_id})
 

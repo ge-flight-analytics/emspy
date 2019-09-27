@@ -83,7 +83,7 @@ class LocalData(object):
 	def delete_all_tables(self):
 
 		for table_name in list(LocalData.table_info.keys()):
-			if table_exists(table_name):
+			if self.table_exists(table_name):
 				self._conn.execute("DROP TABLE %s" % table_name)
 		self._conn.commit()
 
