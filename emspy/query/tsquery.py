@@ -14,7 +14,7 @@ import numpy as np
 class TSeriesQuery(Query):
 
 
-    def __init__(self, conn, ems_name, data_file = None):
+    def __init__(self, conn, ems_name, data_file = LocalData.default_data_file):
 
         Query.__init__(self, conn, ems_name)
         self._init_assets(data_file)
