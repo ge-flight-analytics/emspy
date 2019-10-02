@@ -5,6 +5,7 @@ standard_library.install_aliases()
 from emspy.query import *
 from .query import Query
 
+import sys
 import pickle
 import warnings
 import pandas as pd
@@ -14,7 +15,7 @@ import numpy as np
 class TSeriesQuery(Query):
 
 
-    def __init__(self, conn, ems_name, data_file = None):
+    def __init__(self, conn, ems_name, data_file = LocalData.default_data_file):
 
         Query.__init__(self, conn, ems_name)
         self._init_assets(data_file)
@@ -125,7 +126,7 @@ class TSeriesQuery(Query):
                 prm['ems_id'] = self._ems_id
             df = pd.DataFrame(prm, index=[0])
 
-            self.__analytic._param_table = self.__analytic._param_table.append(df, ignore_index=True)
+            self.__analytic._param_table = self.__analytic._param_table.append(df, ignore_index=True, sort=True)
 
             # Put the param into JSON query string
             self.__queryset['select'].append({'analyticId': prm['id']})
@@ -158,7 +159,7 @@ class TSeriesQuery(Query):
                 # The first one is with the shortest name string. Pick that.
                 prm = res_df.iloc[0,:].to_dict()
                 # Add the new parameters to the param table for later uses
-                self.__analytic._param_table = self.__analytic._param_table.append(res_df, ignore_index = True)
+                self.__analytic._param_table = self.__analytic._param_table.append(res_df, ignore_index = True, sort = True)
                 save_table = True
 
             # Put the param into JSON query string
@@ -284,7 +285,7 @@ class TSeriesQuery(Query):
         if p["id"] == "":
             res_df = self.__analytic.search_param("hours of data (hours)", in_df = True)
             p      = res_df.iloc[0].to_dict()
-            self.__analytic._param_table = self.__analytic._param_table.append(res_df, ignore_index = True)
+            self.__analytic._param_table = self.__analytic._param_table.append(res_df, ignore_index = True, sort = True)
             self.__analytic._save_paramtable()
         q = {
             "select": [{"analyticId": p["id"]}],

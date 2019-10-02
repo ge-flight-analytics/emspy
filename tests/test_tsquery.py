@@ -1,26 +1,36 @@
-from emspy.query import TSeriesQuery
-from unittest.mock import patch
+import emspy, os, sys, pytest
+from emspy.query import LocalData
 from mock_connection import MockConnection
 from mock_ems import MockEMS
-
 from urllib.error import HTTPError
 
-import sys
-sys.path.insert(0, '..')
+def get_test_db_path():
+    tests_dir = os.path.dirname(os.path.realpath(__file__))
+    return os.path.join(tests_dir, 'emsMetaData.db')
 
+@pytest.fixture
+def mocks(monkeypatch):
+    monkeypatch.setattr(emspy.query.query, 'EMS', MockEMS)
+    monkeypatch.setattr(emspy, 'Connection', MockConnection)
 
+@pytest.fixture
+def tsq(mocks):
+    sys = 'ems24-app'
+    c = MockConnection(user='', pwd='')
+    data_file = get_test_db_path()
+    return emspy.query.TSeriesQuery(c, sys, data_file)
+
+@pytest.fixture
+def tsq_no_db(mocks):
+    sys = 'ems24-app'
+    c = MockConnection(user='', pwd='')
+    return emspy.query.TSeriesQuery(c, sys, data_file=None)
 
 '''
 QUERYSET TESTS
 '''
 
-@patch('emspy.query.query.EMS', MockEMS)
-@patch('emspy.Connection', MockConnection)
-def test_analytic_ids_in_queryset_using_select_ids_no_lookup():
-    sys = 'ems24-app'
-    c = MockConnection(user='', pwd='')
-
-    tsq = TSeriesQuery(c, 'ems24-app')
+def test_analytic_ids_in_queryset_using_select_ids_no_lookup(tsq):
     analytic_ids = ['asdfasdf', 'asdfasdf']
     names = ['one', 'two']
 
@@ -34,15 +44,9 @@ def test_analytic_ids_in_queryset_using_select_ids_no_lookup():
     # destroy
     tsq._TSeriesQuery__analytic._metadata.delete_all_tables()
 
-
-@patch('emspy.query.query.EMS', MockEMS)
-@patch('emspy.Connection', MockConnection)
-def test_analytic_id_in_queryset_using_select_ids_with_lookup():
-    sys = 'ems24-app'
+def test_analytic_id_in_queryset_using_select_ids_with_lookup(tsq):
     analytic_ids = ['fake-bar-alt-id-that-exists=', 'fake-pressure-alt-id-that-exists=']
     names = ['Baro-Corrected Altitude (ft)', 'Pressure Altitude (ft)']
-    c = MockConnection(user='', pwd='')
-    tsq = TSeriesQuery(c, 'ems24-app')
 
     tsq.select_ids(analytic_ids, names, lookup=True)
     queryset = tsq.get_queryset()
@@ -59,17 +63,11 @@ def test_analytic_id_in_queryset_using_select_ids_with_lookup():
 LOOKUP TESTS
 '''
 
-
-@patch('emspy.query.query.EMS', MockEMS)
-@patch('emspy.Connection', MockConnection)
-def test_analytic_id_with_lookup_using_select_ids_adds_units():
-    sys = 'ems24-app'
+def test_analytic_id_with_lookup_using_select_ids_adds_units(tsq):
     ems_id = 24
     analytic_id = 'fake-bar-alt-id-that-exists='
     name = 'Baro-Corrected Altitude (ft)'
     units_assert = 'ft'
-    c = MockConnection(user='', pwd='')
-    tsq = TSeriesQuery(c, 'ems24-app')
 
     tsq.select_ids(analytic_id, name, lookup=True)
 
@@ -80,19 +78,13 @@ def test_analytic_id_with_lookup_using_select_ids_adds_units():
     # destroy
     tsq._TSeriesQuery__analytic._metadata.delete_all_tables()
 
-
-@patch('emspy.query.query.EMS', MockEMS)
-@patch('emspy.Connection', MockConnection)
-def test_analytic_id_with_lookup_using_select_ids_adds_description():
-    sys = 'ems24-app'
+def test_analytic_id_with_lookup_using_select_ids_adds_description(tsq):
     ems_id = 24
     analytic_id = 'fake-bar-alt-id-that-exists='
     name = 'Baro-Corrected Altitude (ft)'
     description_assert = 'The altitude above mean sea level (MSL) obtained by applying corrections to the pressure ' \
                          'altitude using the altimeter setting.  This parameter may have discrete jumps during these ' \
                          'corrections.'
-    c = MockConnection(user='', pwd='')
-    tsq = TSeriesQuery(c, 'ems24-app')
 
     tsq.select_ids(analytic_id, name, lookup=True)
 
@@ -103,16 +95,10 @@ def test_analytic_id_with_lookup_using_select_ids_adds_description():
     # destroy
     tsq._TSeriesQuery__analytic._metadata.delete_all_tables()
 
-
-@patch('emspy.query.query.EMS', MockEMS)
-@patch('emspy.Connection', MockConnection)
-def test_analytic_id_with_lookup_using_select_ids_adds_name():
-    sys = 'ems24-app'
+def test_analytic_id_with_lookup_using_select_ids_adds_name(tsq):
     ems_id = 24
     analytic_id = 'fake-bar-alt-id-that-exists='
     name_assert = 'Baro-Corrected Altitude (ft)'
-    c = MockConnection(user='', pwd='')
-    tsq = TSeriesQuery(c, 'ems24-app')
 
     tsq.select_ids(analytic_id, lookup=True)
 
@@ -128,20 +114,14 @@ def test_analytic_id_with_lookup_using_select_ids_adds_name():
 INCORRECT ID TESTS
 '''
 
-
-@patch('emspy.query.query.EMS', MockEMS)
-@patch('emspy.Connection', MockConnection)
-def test_analytic_id_doesnt_exist_with_lookup_using_select_ids():
-    sys = 'ems24-app'
+def test_analytic_id_doesnt_exist_with_lookup_using_select_ids(tsq):
     analytic_id = 'fake-pressure-alt-id-that-DOES-NOT-exist='
     name = 'pressure altitude?'
-    c = MockConnection(user='', pwd='')
-    tsq = TSeriesQuery(c, 'ems24-app')
 
     try:
         tsq.select_ids(analytic_id, name, lookup=True)
         assert False
-    except HTTPError as e:
+    except HTTPError:
         assert True
     finally:
         # destroy
@@ -152,59 +132,59 @@ def test_analytic_id_doesnt_exist_with_lookup_using_select_ids():
 PARAMETER EDGE CASE TESTS
 '''
 
-@patch('emspy.query.query.EMS', MockEMS)
-@patch('emspy.Connection', MockConnection)
-def test_analytic_id_returns_error_using_select_ids_with_no_names_and_no_lookup():
-    sys = 'ems24-app'
+def test_analytic_id_returns_error_using_select_ids_with_no_names_and_no_lookup(tsq):
     analytic_id = 'fake-bar-alt-id-that-exists='
-    c = MockConnection(user='', pwd='')
-    tsq = TSeriesQuery(c, 'ems24-app')
 
     try:
         tsq.select_ids(analytic_id)
         assert False
-    except ValueError as e:
+    except ValueError:
         assert True
     finally:
         # destroy
         tsq._TSeriesQuery__analytic._metadata.delete_all_tables()
 
 
-@patch('emspy.query.query.EMS', MockEMS)
-@patch('emspy.Connection', MockConnection)
-def test_passing_different_length_lists_to_select_ids():
+def test_passing_diffet_length_lists_to_select_ids(tsq):
     # Set up with two analytic_ids but only one name.
-    sys = 'ems24-app'
     analytic_ids = ['fake-bar-alt-id-that-exists=', 'fake-pressure-alt-id-that-exists=']
     names = ['Baro-Corrected Altitude (ft)']
-    c = MockConnection(user='', pwd='')
-    tsq = TSeriesQuery(c, 'ems24-app')
 
     try:
         tsq.select_ids(analytic_ids, names, lookup=True)
         assert False  # Should not be able to select ids with different length lists
-    except ValueError as e:
+    except ValueError:
         assert True
     finally:
         # destroy
         tsq._TSeriesQuery__analytic._metadata.delete_all_tables()
 
 
-@patch('emspy.query.query.EMS', MockEMS)
-@patch('emspy.Connection', MockConnection)
-def test_passing_mix_of_strings_and_lists_to_select_ids():
+def test_passing_mix_of_strings_and_lists_to_select_ids(tsq):
     # Set up with two analytic_ids but only one name.
-    sys = 'ems24-app'
     analytic_ids = 'fake-bar-alt-id-that-exists='
     names = ['Baro-Corrected Altitude (ft)', 'Baro-Corrected Altitude 2 (ft)']
-    c = MockConnection(user='', pwd='')
-    tsq = TSeriesQuery(c, 'ems24-app')
 
     try:
         tsq.select_ids(analytic_ids, names, lookup=True)
         assert False  # Should not be able to select ids with different length lists
-    except TypeError as e:
+    except TypeError:
         assert True
     finally:
         # destroy
         tsq._TSeriesQuery__analytic._metadata.delete_all_tables()
+
+'''
+DB FILE TESTS
+'''
+
+def test_db_file_not_created(tsq_no_db):
+    # Delete the default db file location if it exists.
+    if os.path.exists(LocalData.default_data_file):
+        os.remove(LocalData.default_data_file)
+
+    # Run the select_ids test with the database file set to None
+    test_analytic_ids_in_queryset_using_select_ids_no_lookup(tsq_no_db)
+
+    # Make sure the default data file was not created.
+    assert os.path.exists(LocalData.default_data_file) == False
