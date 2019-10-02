@@ -54,7 +54,7 @@ from emspy.query import FltQuery
 
 query = FltQuery(c, 'ems9', data_file = 'metadata.db')
 ```
-where optional `data_file` input specifies the SQLite file that will be used to read/write the meta data in the local machine. If there is no file with a specified file name, a new db file will be created. If no file name is passed, it will generate a db file in the default location (emspy/data).
+where optional `data_file` input specifies the SQLite file that will be used to read/write the meta data in the local machine. If there is no file with a specified file name, a new db file will be created. If no file name is passed, it will generate a db file in the default location (emspy/data).  If None is specified, no db file will be created.  
 
 
 
