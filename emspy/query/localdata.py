@@ -49,20 +49,20 @@ class LocalData(object):
 
 	def close(self):
 
-		if self._conn:
+		if self._conn is not None:
 			self._conn.close()
 
 
 	def append_data(self, table_name, df):
 		
 		self.__check_colnames(table_name, df)
-		if self.__dbfile:
+		if self.__dbfile is not None:
 			df.to_sql(table_name, self._conn, index=False, if_exists="append")
 
 
 	def get_data(self, table_name, condition = None):
 
-		if self.__dbfile and self.table_exists(table_name):
+		if (self.__dbfile is not None) and self.table_exists(table_name):
 			q  = "SELECT * FROM %s" % table_name
 			if condition is not None:
 				q = q + " WHERE %s" % condition
@@ -76,7 +76,7 @@ class LocalData(object):
 
 	def delete_data(self, table_name, condition = None):
 
-		if self.__dbfile and self.table_exists(table_name):
+		if (self.__dbfile is not None) and self.table_exists(table_name):
 			if condition is None:
 				self._conn.execute("DROP TABLE %s" % table_name)
 			else:
@@ -86,7 +86,7 @@ class LocalData(object):
 
 	def delete_all_tables(self):
 
-		if self.__dbfile:
+		if self.__dbfile is not None:
 			for table_name in list(LocalData.table_info.keys()):
 				if self.table_exists(table_name):
 					self._conn.execute("DROP TABLE %s" % table_name)
@@ -95,7 +95,7 @@ class LocalData(object):
 
 	def table_exists(self, table_name):
 
-		if self.__dbfile == None:
+		if self.__dbfile is None:
 			return False
 
 		cursor = self._conn.cursor()
@@ -109,11 +109,16 @@ class LocalData(object):
 		return self.__dbfile
 
 	def is_db_path_correct(self, path: str):
-		'''
-		Returns true if the path represents the path for the current data file
-		'''
+		"""Checks if the path represents the current data file.
+		
+		Arguments:
+			path (str): The path to compare.
+		
+		Returns:
+			bool: True if the path is the current data file, false otherwise.
+		"""
 
-		if path == None:
+		if path is None:
 			return self.file_loc() == None
 		else:
 			return self.file_loc() == os.path.abspath(path)
