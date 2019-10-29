@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name = 'emspy',
-      version = '0.2.1',
+      version = '0.2.0',
       description = 'A Python EMS RESTful API Client/Wrapper',
       classifiers = [
         'Programming Language :: Python :: 2.7',
@@ -9,8 +9,8 @@ setup(name = 'emspy',
         'License :: OSI Approved :: MIT License'
         ],
       url = 'https://github.com/ge-flight-analytics/emspy',
-      author = 'Kyungjin Moon',
-      author_email = 'jimin96@gmail.com',
+      author = 'GE Flight Analytics',
+      author_email = 'AviationAdiSupport@ge.com',
       license = 'MIT',
       packages = find_packages(),
       install_requires = ['numpy', 'pandas', 'future', 'networkx'],

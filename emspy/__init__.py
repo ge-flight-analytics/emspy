@@ -1,3 +1,4 @@
 from __future__ import absolute_import
 from .connection import Connection 
-# from query import *
+
+__version__ = "0.2.0"
