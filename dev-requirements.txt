@@ -1,4 +1,4 @@
 pytest 
 pytest-azurepipelines
-bumpversion
+bump2version
 twine
