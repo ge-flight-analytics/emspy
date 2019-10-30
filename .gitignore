@@ -2,6 +2,7 @@
 *.py.bak
 emspy/data/*.*
 tests/*.db
+build/
 dist/
 .idea/
 *.egg-info
