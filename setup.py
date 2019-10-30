@@ -14,7 +14,7 @@ setup(name = 'emspy',
       author = 'GE Flight Analytics',
       author_email = 'AviationAdiSupport@ge.com',
       license = 'MIT',
-      packages = find_packages(),
+      packages = find_packages(exclude=("docs","tests")),
       install_requires = ['numpy', 'pandas', 'future', 'networkx'],
       zip_safe = False)
       
