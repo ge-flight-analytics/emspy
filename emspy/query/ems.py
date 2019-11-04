@@ -18,6 +18,10 @@ class EMS(Asset):
 
 	def get_id(self, name = None):
 
+		# Support using integer IDs directly
+		if isinstance(name, int):
+			return name
+			
 		name = name.upper()
 		a    = self.search('name', name, searchtype="match")['id'].tolist()
 		return a if len(a) > 1 else a[0]
