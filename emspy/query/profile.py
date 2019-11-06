@@ -142,8 +142,8 @@ class Profile(Query):
         # If only one row is found, set the class attributes using this row.
         if len(filtered) == 1:
             print('Found a profile with the supplied profile number and name.')
-            print('Profile name: {0}, profile number: {1}.'.format(filtered['localId'].iloc[0],
-                                                                   filtered['name'].iloc[0]))
+            print('Profile name: {0}, profile number: {1}.'.format(filtered['name'].iloc[0],
+                                                                   filtered['localId'].iloc[0]))
             self.__set_profile_attributes(filtered)
         # if more than one rows are found (shouldn't be possible) either try again (if we are searching by name in an
         # inexact manner, we will now try an exact search) or return a LookupError.
