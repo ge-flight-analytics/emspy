@@ -60,7 +60,7 @@ class MockConnection(object):
                            'units': 'ft'}
                 return resp_h, content
             elif jsondata['id'] == 'fake-pressure-alt-id-that-DOES-NOT-exist=':
-                raise HTTPError('url', 'code', 'msg', 'hdrs', 'fp')
+                raise HTTPError('url', 'code', 'msg', 'hdrs', None)
 
 
 

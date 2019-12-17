@@ -108,7 +108,7 @@ class LocalData(object):
 
 		return self.__dbfile
 
-	def is_db_path_correct(self, path: str):
+	def is_db_path_correct(self, path):
 		"""Checks if the path represents the current data file.
 		
 		Arguments:

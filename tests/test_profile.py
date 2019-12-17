@@ -1,10 +1,13 @@
 import sys
 sys.path.insert(0, '..')
 from emspy.query import Profile
-from unittest.mock import patch
 from mock_connection import MockConnection
 from mock_ems import MockEMS
 
+if sys.version_info[0] == 2:
+    from mock import patch
+else:
+    from unittest.mock import patch
 
 # @patch() decorator replaces an object with a mock object for the test it decorates
 # For more information on how to use @patch, see https://stackoverflow.com/questions/32461465/python-patch-not-working
