@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name = 'emspy',
-      version = '0.2.3',
+      version = '0.2.4',
       description = 'A Python EMS RESTful API Client/Wrapper',
       long_description=readme(),
       long_description_content_type="text/markdown",
