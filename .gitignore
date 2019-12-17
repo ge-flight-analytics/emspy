@@ -9,3 +9,5 @@ dist/
 __pycache__
 .pytest_cache
 .vscode
+test-output.xml
+test.db
