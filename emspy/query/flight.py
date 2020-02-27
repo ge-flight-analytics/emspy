@@ -444,7 +444,7 @@ class Flight(object):
 def get_shortest(fields):
     if isinstance(fields, pd.DataFrame) is False:
         sys.exit("Input should be a Pandas dataframe.")
-    return fields.loc[fields.name.str.len().argmin()].to_dict()
+    return fields.loc[fields.name.str.len().idxmin()].to_dict()
 
 
 def listdiff(a, b):
