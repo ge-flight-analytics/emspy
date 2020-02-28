@@ -29,6 +29,6 @@ setup(name = 'emspy',
       author_email = 'AviationAdiSupport@ge.com',
       license = 'MIT',
       packages = find_packages(exclude=("docs","tests")),
-      install_requires = [numpy_install_rule, 'pandas', 'future', 'networkx'],
+      install_requires = [numpy_install_rule, 'pandas==0.24.1', 'future', 'networkx'],
       zip_safe = False)
       
