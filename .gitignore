@@ -1,6 +1,13 @@
 *.pyc
 *.py.bak
 emspy/data/*.*
+tests/*.db
+build/
 dist/
 .idea/
 *.egg-info
+__pycache__
+.pytest_cache
+.vscode
+test-output.xml
+test.db

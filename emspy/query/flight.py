@@ -14,7 +14,7 @@ class Flight(object):
                     'Weather Information', 'Profiles', 'Profile']
 
 
-    def __init__(self, conn, ems_id, data_file=None):
+    def __init__(self, conn, ems_id, data_file=LocalData.default_data_file):
 
         self._conn = conn
         self._ems_id = ems_id
@@ -30,28 +30,28 @@ class Flight(object):
         # Set default database
         # self.set_database('fdw flight')
 
-    def load_tree(self, file_name=None):
+    def load_tree(self, file_name=LocalData.default_data_file):
 
         if self._metadata is None:
             self._metadata = LocalData(file_name)
-        else:
-            if (file_name is not None) and (self._metadata.file_loc() != os.path.abspath(file_name)):
-                self._metadata.close()
-                self._metadata = LocalData(file_name)
+        elif not self._metadata.is_db_path_correct(file_name):
+            self._metadata.close()
+            self._metadata = LocalData(file_name)
 
         self._trees = {'fieldtree': self.__get_fieldtree(),
                        'dbtree'   : self.__get_dbtree(),
                        'kvmaps'   : self.__get_kvmaps()}
 
 
-    def save_tree(self, file_name=None):
+    def save_tree(self, file_name=LocalData.default_data_file):
 
         from shutil import copyfile
         ld = self._metadata
-        if (file_name is not None) and (ld.file_loc() != os.path.abspath(file_name)):
-            # A new file location is given, copy all the data in the current file with new file name,
-            # and save the currently loaded tree data into the new file too.
-            copyfile(self._metadata.file_loc(), file_name)
+        if not ld.is_db_path_correct(file_name):
+            # A different location is given, if a previous file exists copy it to the new location.
+            if ld.file_loc() != None and file_name != None:
+                copyfile(ld.file_loc(), os.path.abspath(file_name))
+
             self._metadata.close()
             self._metadata = LocalData(file_name)
 

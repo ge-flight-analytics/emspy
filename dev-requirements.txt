@@ -1,0 +1,5 @@
+pytest 
+pytest-azurepipelines
+mock
+bump2version
+twine

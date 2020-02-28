@@ -7,21 +7,24 @@ import os, sys, re, sqlite3
 
 
 class LocalData(object):
+	default_data_file = os.path.join(emspy.__path__[0], "data","emsMetaData.db")
+
 	table_info = {
 		"fieldtree": ["ems_id", "db_id", "id", "nodetype", "type", "name", "parent_id" ],
 		"dbtree"   : ["ems_id", "id", "nodetype", "name", "parent_id"],
-	    "kvmaps"   : ["ems_id", "id", "key", "value"],
-	    "params"   : ["ems_id", "id", "name", "description", "units"]
-	    }
+		"kvmaps"   : ["ems_id", "id", "key", "value"],
+		"params"   : ["ems_id", "id", "name", "description", "units"]
+	}
 
+	def __init__(self, dbfile = default_data_file):
 
-	def __init__(self, dbfile = None):
+		self.__dbfile = None
+		self._conn = None
 
-		if dbfile is None:
-			dbfile = os.path.join(emspy.__path__[0], "data","emsMetaData.db")
-		dbfile = os.path.abspath(dbfile)
-		self.__dbfile = dbfile
-		self.__connect()
+		# This is done to support a mode that does not use a data file at all (when dbfile is set to None explicitly)
+		if dbfile:
+			self.__dbfile = os.path.abspath(dbfile)
+			self.__connect()
 
 	
 	def __del__(self):
@@ -31,7 +34,8 @@ class LocalData(object):
 
 	def __connect(self):
 
-		self._conn = sqlite3.connect(self.__dbfile)
+		if self.__dbfile:
+			self._conn = sqlite3.connect(self.__dbfile)
 
 
 	def __check_colnames(self, table_name, df):
@@ -45,19 +49,20 @@ class LocalData(object):
 
 	def close(self):
 
-		self._conn.close()
+		if self._conn is not None:
+			self._conn.close()
 
 
 	def append_data(self, table_name, df):
 		
 		self.__check_colnames(table_name, df)
-		df.to_sql(table_name, self._conn, index=False, if_exists="append")
-	
+		if self.__dbfile is not None:
+			df.to_sql(table_name, self._conn, index=False, if_exists="append")
 
 
 	def get_data(self, table_name, condition = None):
 
-		if self.table_exists(table_name):
+		if (self.__dbfile is not None) and self.table_exists(table_name):
 			q  = "SELECT * FROM %s" % table_name
 			if condition is not None:
 				q = q + " WHERE %s" % condition
@@ -67,12 +72,11 @@ class LocalData(object):
 			# Strange columns appear. Get only the actual columns
 			return df[LocalData.table_info[table_name]]		
 		return pd.DataFrame(columns = LocalData.table_info[table_name])
-		
 
 
 	def delete_data(self, table_name, condition = None):
 
-		if self.table_exists(table_name):
+		if (self.__dbfile is not None) and self.table_exists(table_name):
 			if condition is None:
 				self._conn.execute("DROP TABLE %s" % table_name)
 			else:
@@ -82,13 +86,17 @@ class LocalData(object):
 
 	def delete_all_tables(self):
 
-		for table_name in list(LocalData.table_info.keys()):
-			if table_exists(table_name):
-				self._conn.execute("DROP TABLE %s" % table_name)
-		self._conn.commit()
+		if self.__dbfile is not None:
+			for table_name in list(LocalData.table_info.keys()):
+				if self.table_exists(table_name):
+					self._conn.execute("DROP TABLE %s" % table_name)
+			self._conn.commit()
 
 
 	def table_exists(self, table_name):
+
+		if self.__dbfile is None:
+			return False
 
 		cursor = self._conn.cursor()
 		cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
@@ -99,3 +107,19 @@ class LocalData(object):
 	def file_loc(self):
 
 		return self.__dbfile
+
+	def is_db_path_correct(self, path):
+		"""Checks if the path represents the current data file.
+		
+		Arguments:
+			path (str): The path to compare.
+		
+		Returns:
+			bool: True if the path is the current data file, false otherwise.
+		"""
+
+		if path is None:
+			return self.file_loc() == None
+		else:
+			return self.file_loc() == os.path.abspath(path)
+

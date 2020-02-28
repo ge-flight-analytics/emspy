@@ -9,20 +9,19 @@ from emspy.query import LocalData
 
 class Analytic(object):
 
-	def __init__(self, conn, ems_id, data_file = None):
+	def __init__(self, conn, ems_id, data_file = LocalData.default_data_file):
 		self._conn        = conn
 		self._ems_id      = ems_id
 		self._metadata    = None
 		self._load_paramtable(data_file)
 
 
-	def _load_paramtable(self, file_name = None):
+	def _load_paramtable(self, file_name = LocalData.default_data_file):
 		if self._metadata is None:
 			self._metadata = LocalData(file_name)
-		else:
-			if (file_name is None) and (self._metadata.file_loc() != os.path.abspath(file_name)):
-				self._metadata.close()
-				self._metadata = LocalData(file_name)
+		elif not self._metadata.is_db_path_correct(file_name):
+			self._metadata.close()
+			self._metadata = LocalData(file_name)
 
 		self._param_table = self._metadata.get_data("params", "ems_id = %d" % self._ems_id)
 
@@ -32,6 +31,12 @@ class Analytic(object):
 			self._metadata.delete_data("params", "ems_id = %d" % self._ems_id)
 			self._metadata.append_data("params", self._param_table)
 
+
+	def get_param_details(self, analytic_id):
+		resp_h, content = self._conn.request(rtype="POST", uri_keys=('analytic', 'search'), uri_args=self._ems_id,
+											 jsondata={'id': analytic_id})
+
+		return content
 
 	def search_param(self, keyword, in_df = False):
 		print('Searching for params with keyword "%s" from EMS ...' % keyword, end=' ')
@@ -75,7 +80,7 @@ class Analytic(object):
 		# When unique = True
 		if unique:
 			return df.iloc[0,:].to_dict()
-        # When unique = False
+		# When unique = False
 		return df.to_dict('records')
 
 

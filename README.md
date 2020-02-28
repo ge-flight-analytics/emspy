@@ -1,9 +1,7 @@
 # emsPy
-A Python Wrapper of EMS API. There is also a R wrapper for EMS API. If you are interest in the R version, please visit <https://github.com/ge-flight-analytics/Rems>. The goal of this project is provide a way to bring EMS data in Python environment via the EMS's RESTful API. The project is still in an early alpha stage, so is not guarranteed working reliably nor well documented. I'll beef up the documentation as soon as possible.
+A Python Wrapper of EMS API. There is also a R wrapper for EMS API. If you are interest in the R version, please visit <https://github.com/ge-flight-analytics/Rems>. The goal of this project is provide a way to bring EMS data in Python environment via the EMS's RESTful API. The project is still in an early alpha stage, so it is not guaranteed to be working reliably, nor is it well documented. 
 
-Any contribution is welcome!
-
-Dependency: 
+Dependencies: 
 * numpy >= 1.11 
 * pandas >= 0.18
 * future >= 0.16
@@ -16,10 +14,17 @@ Dependency:
 
 
 ## Installation
+
+Install from the package index: 
+
+```
+pip install emspy
+```
+
+Alternatively, the package can be installed from the git repository or a zip package:
 1. Download or clone emsPy. If downloaded, unzip the compressed file.
 2. Go to the folder that you unzipped or git-cloned, where you can find `setup.py` file.
 3. At the folder, open the command prompt window and run `pip install .` For dev-mode, run `pip install -e .`
-
 
 ## Make an EMS API Connection
 
@@ -54,7 +59,7 @@ from emspy.query import FltQuery
 
 query = FltQuery(c, 'ems9', data_file = 'metadata.db')
 ```
-where optional `data_file` input specifies the SQLite file that will be used to read/write the meta data in the local machine. If there is no file with a specified file name, a new db file will be created. If no file name is passed, it will generate a db file in the default location (emspy/data).
+where optional `data_file` input specifies the SQLite file that will be used to read/write the meta data in the local machine. If there is no file with a specified file name, a new db file will be created. If no file name is passed, it will generate a db file in the default location (emspy/data).  If None is specified, no db file will be created.  
 
 
 
