@@ -68,7 +68,7 @@ class InsertQuery(Query):
             missing_from_map = list(set(df.columns.values) - set(schema_map.keys()))
             # If any columns are in `df` but not in `schema_map`, error out.
             if len(missing_from_map) > 0:
-                raise ValueError(f"Column(s): '{missing_from_map}' found in `df`, but not in `schema_map`.  ")
+                raise ValueError("Column(s): '{0}' found in `df`, but not in `schema_map`.".format(missing_from_map))
             df = df.rename(columns=schema_map)
         else:
             print('schema_map was not passed.  Assuming dataframe column names correspond to EMS schema.')
