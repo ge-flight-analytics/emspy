@@ -11,7 +11,7 @@ class InsertQuery(Query):
     Args:
         conn (ems.connection): A valid instantiated EMS connection object.
         ems_name (str): A valid EMS system name.
-        database (str): A database id to insert into.
+        database_id (str): A database id to insert into.
     """
 
     def __init__(self, conn, ems_name, database_id):
