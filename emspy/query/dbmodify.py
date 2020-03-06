@@ -29,15 +29,26 @@ class InsertQuery(Query):
 
         self.__create_columns = {'createColumns': []}
 
+    def get_create_columns(self):
+        """
+        A method which returns the values of createColumns attribute.
+
+        Returns:
+            dictionary: a dictionary corresponding to the current value of self.__create_columns
+        """
+
+        return self.__create_columns
+
     def insert_df(self, df, schema_map=None):
         """
         A method for insert values from a pandas DataFrame.
 
         Args:
             df (:obj:`pd.DataFrame`): A pandas DataFrame of values to input, where the columns are the fieldIds and the
-                entries are values to input.
-            schema_map (:obj:`dict`, optional): A mapping of named dataframe columns to field ids, e.g.
-                list('column1' = '[-hub][schema]').  If this is not passed, the columsn of df should correspond to EMS
+                entries are values to input (unless schema_map is passed, in which case column names can be arbitrary
+                as long as they exist in schema_map and map to ems schemas).
+            schema_map (:obj:`dict`, optional): A mapping of named DataFrame columns to field ids, e.g.
+                {'column1' = '[-hub][schema]'}.  If this is not passed, the columns of df should correspond to EMS
                 schemas.
         Raises:
             TypeError: If `schema_map` is not a dictionary.
