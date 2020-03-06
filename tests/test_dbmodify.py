@@ -12,7 +12,7 @@ else:
 
 @patch('emspy.query.query.EMS', MockEMS)
 @patch('emspy.Connection', MockConnection)
-def test_all_df_rows_exist_in_create_columns_no_schema_map():
+def test_all_df_rows_exist_in_create_columns_without_schema_map():
     sys = 'ems24-app'
     c = MockConnection(user='', pwd='')
     entity_id = 'foo'
@@ -39,7 +39,7 @@ def test_all_df_rows_exist_in_create_columns_no_schema_map():
 
 @patch('emspy.query.query.EMS', MockEMS)
 @patch('emspy.Connection', MockConnection)
-def test_all_create_columns_exist_in_df_no_schema_map():
+def test_all_create_columns_exist_in_df_without_schema_map():
     sys = 'ems24-app'
     c = MockConnection(user='', pwd='')
     entity_id = 'foo'

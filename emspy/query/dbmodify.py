@@ -11,12 +11,12 @@ class InsertQuery(Query):
     Args:
         conn (ems.connection): A valid instantiated EMS connection object.
         ems_name (str): A valid EMS system name.
-        database (str): A databaseId to insert into.
+        database (str): A database id to insert into.
     """
 
-    def __init__(self, conn, ems_name, database):
+    def __init__(self, conn, ems_name, database_id):
         Query.__init__(self, conn, ems_name)
-        self._database = database
+        self._database_id = database_id
         self.__create_columns = {'createColumns': []}
 
     def in_json(self):
@@ -46,7 +46,7 @@ class InsertQuery(Query):
         Args:
             df (:obj:`pd.DataFrame`): A pandas DataFrame of values to input, where the columns are the fieldIds and the
                 entries are values to input (unless schema_map is passed, in which case column names can be arbitrary
-                as long as they exist in schema_map and map to ems schemas).
+                as long as they exist in schema_map and map to ems monikers).
             schema_map (:obj:`dict`, optional): A mapping of named DataFrame columns to field ids, e.g.
                 {'column1' = '[-hub][schema]'}.  If this is not passed, the columns of df should correspond to EMS
                 schemas.
@@ -80,7 +80,7 @@ class InsertQuery(Query):
 
     def run(self):
         resp_h, content = self._conn.request(rtype='POST', uri_keys=('database', 'create'),
-                                             uri_args=(self._ems_id, self._database), jsondata=self.__create_columns)
+                                             uri_args=(self._ems_id, self._database_id), jsondata=self.__create_columns)
         # Unintended responses are handled in Connection.request, so we only do verification here.
         rows_added = content['rowsAdded']
         if (rows_added == len(self.__create_columns['createColumns'])):
