@@ -49,6 +49,15 @@ With optional `server` argument, you can select one of the currently available E
 * "beta" 
 * "nightly"
 
+For servers hosted locally or in Azure, the server_url argument should be used instead of the server argument. This argument should be of the format "<server address>/api". For example, if the server hosting the API is http://abc-api.us.efoqa.com, then the connection object would look like this
+
+```python
+from emspy import Connection
+
+c = Connection("usrname", "password", proxies=proxies, server_url="http://abc-api.us.efoqa.com/api")
+
+```
+
 ## Fight Querying
 
 ### Instantiate Query 
