@@ -23,10 +23,14 @@ class EMS(Asset):
 		# Support using integer IDs directly
 		if isinstance(name, int):
 			return name
-		
+
 		self.ensure_loaded()
 		name = name.upper()
 		a    = self.search('name', name, searchtype="match")['id'].tolist()
+		if len(a) == 0:
+			sys_names = self.list_all()['name'].to_list()
+			raise ValueError('No matching systems found.  You have access to: {0}'.format(sys_names))
+
 		return a if len(a) > 1 else a[0]
 
 
