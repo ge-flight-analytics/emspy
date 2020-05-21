@@ -19,6 +19,14 @@ class EMS(Asset):
 
 
 	def get_id(self, name = None):
+		"""
+		A method to get an ems_id using a supplied ems_name.
+
+		Args:
+		    ems_name (str): An EMS system name to get the ID for.
+		Raises:
+		    ValueError: If `ems_name` is not specified, but the user has access to more than one system.
+		"""
 
 		# Support using integer IDs directly
 		if isinstance(name, int):
