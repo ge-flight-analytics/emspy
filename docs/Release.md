@@ -3,12 +3,12 @@
 Run the following steps to release a new version of `emspy`:
 
 ```
-git checkout v0.2.1
+git checkout master
 git pull
 pip install -r dev-requirements.txt
 git config --global core.safecrlf false
 bump2version patch
-git push origin v0.2.1 --tags
+git push origin master --tags
 python setup.py sdist bdist_wheel
 twine upload dist/*
 ```
@@ -18,7 +18,7 @@ twine upload dist/*
 * On Windows, set `git config --global core.safecrlf false`. You probably want to turn this back on afterwards if it was set to true
 * If this is a feature release, run `bump2version minor`. If this is a bug fix release, run `bump2version patch`
     * This will increment the version numbers in the repository, commit the changes, and create a new git tag
-* Push the new commit and the tag to github with `git push origin v0.2.1 --tags`
+* Push the new commit and the tag to github with `git push origin master --tags`
 * Generate packages using `python setup.py sdist bdist_wheel`
 * Upload to pypi using `twine upload dist/*`
 
