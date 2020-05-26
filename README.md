@@ -1,27 +1,22 @@
 # emsPy
-A Python Wrapper of EMS API. There is also a R wrapper for EMS API. If you are interest in the R version, please visit <https://github.com/ge-flight-analytics/Rems>. The goal of this project is provide a way to bring EMS data in Python environment via the EMS's RESTful API. The project is still in an early alpha stage, so it is not guaranteed to be working reliably, nor is it well documented. 
+A Python Wrapper of EMS API. There is also a R wrapper for EMS API. If you are interest in the R version, please visit <https://github.com/ge-flight-analytics/Rems>. The goal of this project is provide a way to bring EMS data in Python environment via the EMS's RESTful API.
 
-Dependencies: 
-* numpy >= 1.11 
-* pandas >= 0.18
-* future >= 0.16
-* networkx
+## Branches
 
-## v0.2.1 Changes
-* Packed as an installable package.
-* emsPy is now Python 3 compatible.
-* **Caution: this version is possibly buggy, especially in the installation and Python 3 usage.** I have not gone through many tests yet in Python 3. 
-
+* New work is completed in the `master` branch of this repository and may contain breaking changes. Pull requests should be made to this branch.
+* Old stable functionality exists in the `v0.2.1` branch and should never change except for minor fixes.
+* Releases are publicly available on `PyPi` using semantic versioning.
 
 ## Installation
 
-Install from the package index: 
+Install from the package index:
 
 ```
 pip install emspy
 ```
 
 Alternatively, the package can be installed from the git repository or a zip package:
+
 1. Download or clone emsPy. If downloaded, unzip the compressed file.
 2. Go to the folder that you unzipped or git-cloned, where you can find `setup.py` file.
 3. At the folder, open the command prompt window and run `pip install .` For dev-mode, run `pip install -e .`
