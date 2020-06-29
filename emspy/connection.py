@@ -16,12 +16,13 @@ class Connection(object):
 	'''
 	Object for connection to EMS API
 	'''
-	def __init__(self, user=None, pwd=None, proxies=None, verbose=False, ignore_ssl_errors=False, server="prod", server_url=None):
+	def __init__(self, user=None, pwd=None, proxies=None, verbose=False, ignore_ssl_errors=False, server="prod", server_url=None, max_trials=3):
 
 		self.__user 		= user
 		self.__pwd  		= pwd
 		self.__proxies      = proxies
 		self.__ntrials      = 0
+		self.__max_trials   = max_trials
 		self.__uri_root     = None
 		self.__ignore_ssl_errors = ignore_ssl_errors
 		self.token 			= None
@@ -68,7 +69,7 @@ class Connection(object):
 
 	def reconnect(self, verbose = False):
 
-		if self.__ntrials >= 3:
+		if self.__ntrials >= self.__max_trials:
 			sys.exit("Stop trying to reconnect EMS API after %d trials" % self.__ntrials)
 
 		self.__ntrials +=1
