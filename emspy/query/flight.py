@@ -75,13 +75,16 @@ class Flight(object):
 
 
     def __get_dbtree(self):
-        T = self._metadata.get_data("dbtree", "ems_id = %d" % self._ems_id)
+        T = self._metadata.get_data("dbtree", "uri_root = '%s' AND ems_id = %d" % (self._conn._Connection__uri_root, self._ems_id))
         if len(T) < 1:
-            dbroot = {'ems_id': self._ems_id,
-                      'id': "[-hub-][entity-type-group][[--][internal-type-group][root]]",
-                      'name': "<root>",
-                      'nodetype': "root",
-                      'parent_id': None}
+            dbroot = {
+                'uri_root': self._conn._Connection__uri_root,
+                'ems_id': self._ems_id,
+                'id': "[-hub-][entity-type-group][[--][internal-type-group][root]]",
+                'name': "<root>",
+                'nodetype': "root",
+                'parent_id': None
+            }
             self._trees['dbtree'] = pd.DataFrame([dbroot])
             self.__update_children(dbroot, treetype = "dbtree")
             self.update_tree("fdw", treetype = "dbtree", exclude_tree = ["APM Events"])
@@ -92,18 +95,18 @@ class Flight(object):
 
     def __save_dbtree(self):
         if len(self._trees['dbtree']) > 0:
-            self._metadata.delete_data("dbtree", "ems_id = %d" % self._ems_id)
+            self._metadata.delete_data("dbtree", "uri_root = '%s' AND ems_id = %d" % (self._conn._Connection__uri_root, self._ems_id))
             self._metadata.append_data("dbtree", self._trees['dbtree'])
 
 
     def __get_kvmaps(self):
-        T = self._metadata.get_data("kvmaps", "ems_id = %d" % self._ems_id)
+        T = self._metadata.get_data("kvmaps", "uri_root = '%s' AND ems_id = %d" % (self._conn._Connection__uri_root, self._ems_id))
         return T
 
 
     def __save_kvmaps(self):
         if len(self._trees['kvmaps']) > 0:
-            self._metadata.delete_data("kvmaps", "ems_id = %d" % self._ems_id)
+            self._metadata.delete_data("kvmaps", "uri_root = '%s' AND ems_id = %d" % (self._conn._Connection__uri_root, self._ems_id))
             self._metadata.append_data("kvmaps", self._trees['kvmaps'])
 
 
@@ -135,18 +138,20 @@ class Flight(object):
                                        body=body)
         d1 = []
         if len(d['databases']) > 0:
-            d1 = [{'ems_id': parent['ems_id'],
-                                'id': x['id'],
-                                'nodetype': 'database',
-                                'name': x['pluralName'],
-                                'parent_id': parent['id']} for x in d['databases']]
+            d1 = [{'uri_root': parent['uri_root'],
+                   'ems_id': parent['ems_id'],
+                   'id': x['id'],
+                   'nodetype': 'database',
+                   'name': x['pluralName'],
+                   'parent_id': parent['id']} for x in d['databases']]
         d2 = []
         if len(d['groups']) > 0:
-            d2 = [{'ems_id': parent['ems_id'],
-                                'id': x['id'],
-                                'nodetype': 'database_group',
-                                'name': x['name'],
-                                'parent_id': parent['id']} for x in d['groups']]
+            d2 = [{'uri_root': parent['uri_root'],
+                   'ems_id': parent['ems_id'],
+                   'id': x['id'],
+                   'nodetype': 'database_group',
+                   'name': x['name'],
+                   'parent_id': parent['id']} for x in d['groups']]
         return d1, d2
 
 
@@ -159,22 +164,24 @@ class Flight(object):
                                        body=body)
         d1 = []
         if len(d['fields']) > 0:
-            d1 = [{'ems_id': parent['ems_id'],
-                                'db_id' : self._db_id,
-                                'id': x['id'],
-                                'nodetype': 'field',
-                                'type': x['type'],
-                                'name': x['name'],
-                                'parent_id': parent['id']} for x in d['fields']]
+            d1 = [{'uri_root': parent['uri_root'],
+                   'ems_id': parent['ems_id'],
+                   'db_id' : self._db_id,
+                   'id': x['id'],
+                   'nodetype': 'field',
+                   'type': x['type'],
+                   'name': x['name'],
+                   'parent_id': parent['id']} for x in d['fields']]
         d2 = []
         if len(d['groups']) > 0:
-            d2 = [{'ems_id': parent['ems_id'],
-                                'db_id': self._db_id,
-                                'id': x['id'],
-                                'nodetype': 'field_group',
-                                'type': None,
-                                'name': x['name'],
-                                'parent_id': parent['id']} for x in d['groups']]
+            d2 = [{'uri_root': parent['uri_root'],
+                   'ems_id': parent['ems_id'],
+                   'db_id': self._db_id,
+                   'id': x['id'],
+                   'nodetype': 'field_group',
+                   'type': None,
+                   'name': x['name'],
+                   'parent_id': parent['id']} for x in d['groups']]
         return d1, d2
 
 
@@ -410,10 +417,13 @@ class Flight(object):
             resp_h, content = self._conn.request(uri_keys=('database', 'field'),
                                                  uri_args=(self._ems_id, self._db_id, fld_id))
             km = content['discreteValues']
-            kmap = pd.DataFrame({'ems_id': self._ems_id,
-                                 'id': fld_id,
-                                 'key': list(km.keys()),
-                                 'value': list(km.values())})
+            kmap = pd.DataFrame({
+                'uri_root': self._conn._Connection__uri_root,
+                'ems_id': self._ems_id,
+                'id': fld_id,
+                'key': list(km.keys()),
+                'value': list(km.values())
+            })
             kmap['key'] = pd.to_numeric(kmap['key'])
 
             self._trees['kvmaps'] = self._trees['kvmaps'].append(kmap, ignore_index=True)

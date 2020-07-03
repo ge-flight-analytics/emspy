@@ -10,10 +10,10 @@ class LocalData(object):
 	default_data_file = os.path.join(emspy.__path__[0], "data","emsMetaData.db")
 
 	table_info = {
-		"fieldtree": ["ems_id", "db_id", "id", "nodetype", "type", "name", "parent_id" ],
-		"dbtree"   : ["ems_id", "id", "nodetype", "name", "parent_id"],
-		"kvmaps"   : ["ems_id", "id", "key", "value"],
-		"params"   : ["ems_id", "id", "name", "description", "units"]
+		"fieldtree": ["uri_root", "ems_id", "db_id", "id", "nodetype", "type", "name", "parent_id" ],
+		"dbtree"   : ["uri_root", "ems_id", "id", "nodetype", "name", "parent_id"],
+		"kvmaps"   : ["uri_root", "ems_id", "id", "key", "value"],
+		"params"   : ["uri_root", "ems_id", "id", "name", "description", "units"]
 	}
 
 	def __init__(self, dbfile = default_data_file):
