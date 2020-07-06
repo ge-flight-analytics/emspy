@@ -123,11 +123,11 @@ class FltQuery(Query):
 		import re
 
 		for pattern in ['[=!<>]=?'] + list(sp_ops.keys()):
-			a = re.search(f"('.*?'\s*)({pattern}\s*)('.*?'\s*)({pattern}\s*)?('.*?')?", expr)
-			if len([s for s in a.groups() if s is not None]):
+			a = re.search(f"(.*)({pattern})(.*)({pattern})(.*)|(.*)({pattern})(.*)", expr)
+			if a is not None and len([s for s in a.groups() if s is not None]):
 				break
 
-		if not len([s for s in a.groups() if s is not None]):
+		if a is None or not len([s for s in a.groups() if s is not None]):
 			sys.exit("Cannot find any valid conditional operator from the given string expression.")
 		splitted = [s.strip() for s in a.groups() if s is not None]
 		return splitted
@@ -475,8 +475,8 @@ between_ops = {
 	}
 }
 sp_ops = {
-	' in ': 'in',
-	' not in ': 'notIn',
+	'not in': 'notIn',
+	'in': 'in'
 }
 # '=Null': 'isNull', '!=Null': 'isNotNull', 'and': 'And', 'or': 'Or', 'in': 'in', 'not in': 'notIn'
 
@@ -522,10 +522,12 @@ def _discrete_filter(op, d, flt):
 		val_info['value'] = vid
 		fltr = _filter_fmt1(t_op, fld_info, val_info)
 
-	elif op in [" in ", " not in "]:
+	elif op.strip() in ["in", "not in"]:
 		t_op = sp_ops[op]
-		val_list = [{'type':x['type'], 'value':flt.get_value_id(x['value'], field_id=fld_info['value'])}\
-					 for x in d[1:]]
+		val_list = [
+			{'type': x['type'], 'value': flt.get_value_id(x['value'], field_id=fld_info['value'])}
+			for x in d[1:]
+		]
 		inp = [fld_info] + val_list
 		fltr = _filter_fmt1(t_op, *inp)
 	else:
