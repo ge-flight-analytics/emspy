@@ -123,13 +123,13 @@ class FltQuery(Query):
 		import re
 
 		for pattern in ['[=!<>]=?'] + list(sp_ops.keys()):
-			a = re.search(pattern, expr)
-			if a is not None:
+			a = re.search(f"('.*?'\s*)({pattern}\s*)('.*?'\s*)({pattern}\s*)?('.*?')?", expr)
+			if len([s for s in a.groups() if s is not None]):
 				break
 
-		if a is None:
+		if not len([s for s in a.groups() if s is not None]):
 			sys.exit("Cannot find any valid conditional operator from the given string expression.")
-		splitted = expr.partition(a.group())
+		splitted = [s.strip() for s in a.groups() if s is not None]
 		return splitted
 
 
@@ -138,13 +138,17 @@ class FltQuery(Query):
 		fld_loc = [False, False]
 		fld_info = None
 		fld_type = None
-		val_info = None
-		op = expr_vec[1]
+		val_info = []
 
-		for i, s in enumerate([expr_vec[0], expr_vec[2]]):
+		if len(expr_vec) == 3:
+			op = expr_vec[1]
+		elif len(expr_vec) == 5:
+			op = [expr_vec[1], expr_vec[3]]
+
+		for i, s in enumerate([s for s in expr_vec if s not in op]):
 			x = eval(s)
 
-			if i == 0:
+			if i == 0 if len(expr_vec) == 3 else i == 1:
 				fld = self.__flight.search_fields(x)[0]
 				if fld is not None:
 					fld_info = [{'type':'field', 'value': fld['id']}]
@@ -155,9 +159,9 @@ class FltQuery(Query):
 			else:
 				if type(x) != list:
 					x = [x]
-				val_info = [{'type':'constant','value':v} for v in x]
+				val_info += [{'type':'constant','value':v} for v in x]
 
-		if fld_loc[1]:
+		if fld_loc[1] and len(expr_vec) == 3:
 			if '<' in expr_vec[1]:
 				op = expr_vec[1].replace('<','>')
 			else:
@@ -449,13 +453,30 @@ class FltQuery(Query):
 ## Experimental...
 
 basic_ops = {
-	'==': 'equal', '!=': 'notEqual', '<': 'lessThan',
-	'<=': 'lessThanOrEqual', '>': 'greaterThan',
+	'==': 'equal',
+	'!=': 'notEqual',
+	'<': 'lessThan',
+	'<=': 'lessThanOrEqual',
+	'>': 'greaterThan',
 	'>=': 'greaterThanOrEqual'
+}
+between_ops = {
+	'<': {
+		'<': 'betweenExclusive'
+	},
+	'<=': {
+		'<=': 'betweenInclusive'
+	},
+	'>': {
+		'>': 'notBetweenExclusive'
+	},
+	'>=': {
+		'>=': 'notBetweenInclusive'
+	}
 }
 sp_ops = {
 	' in ': 'in',
-	' not in ': 'notIn'
+	' not in ': 'notIn',
 }
 # '=Null': 'isNull', '!=Null': 'isNotNull', 'and': 'And', 'or': 'Or', 'in': 'in', 'not in': 'notIn'
 
@@ -514,11 +535,19 @@ def _discrete_filter(op, d, flt):
 
 def _number_filter(op, d):
 
-	if op in basic_ops:
-		t_op = basic_ops[op]
-		fltr = _filter_fmt1(t_op, d[0], d[1])
-	else:
-		raise ValueError("%s: Unsupported conditional operator for number field type." % op)
+	if len(op) == 1:
+		if op in basic_ops:
+			t_op = basic_ops[op]
+			fltr = _filter_fmt1(t_op, d[0], d[1])
+		else:
+			raise ValueError("%s: Unsupported conditional operator for number field type." % op)
+	elif len(op) == 2:
+		if op[1] in between_ops[op[0]]:
+			t_op = between_ops[op[0]][op[1]]
+			fltr = _filter_fmt1(t_op, d[0], d[1], d[2])
+		else:
+			raise ValueError("%s: Unsupported between conditional operators for number field type." % op)
+
 	return fltr
 
 
