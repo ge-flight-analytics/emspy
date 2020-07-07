@@ -123,7 +123,10 @@ class FltQuery(Query):
 		import re
 
 		for pattern in ['[=!<>]=?'] + list(sp_ops.keys()):
-			a = re.search(f"(.*)({pattern})(.*)({pattern})(.*)|(.*)({pattern})(.*)", expr)
+			a = re.search(
+				"(.*)(%s)(.*)(%s)(.*)|(.*)(%s)(.*)".replace('%s', pattern),
+				expr
+			)
 			if a is not None and len([s for s in a.groups() if s is not None]):
 				break
 
