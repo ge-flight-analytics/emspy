@@ -75,7 +75,10 @@ class Flight(object):
 
 
     def __get_dbtree(self):
-        T = self._metadata.get_data("dbtree", "uri_root = '%s' AND ems_id = %d" % (self._conn._Connection__uri_root, self._ems_id))
+        filter = "ems_id = %d" % self._ems_id
+        if 'uri_root' in self._metadata.get_data("dbtree").columns:
+            filter += " AND uri_root = '%s'" % self._conn._Connection__uri_root
+        T = self._metadata.get_data("dbtree", filter)
         if len(T) < 1:
             dbroot = {
                 'uri_root': self._conn._Connection__uri_root,
@@ -95,18 +98,27 @@ class Flight(object):
 
     def __save_dbtree(self):
         if len(self._trees['dbtree']) > 0:
-            self._metadata.delete_data("dbtree", "uri_root = '%s' AND ems_id = %d" % (self._conn._Connection__uri_root, self._ems_id))
+            filter = "ems_id = %d" % self._ems_id
+            if 'uri_root' in self._metadata.get_data("dbtree").columns:
+                filter += " AND uri_root = '%s'" % self._conn._Connection__uri_root
+            self._metadata.delete_data("dbtree", filter)
             self._metadata.append_data("dbtree", self._trees['dbtree'])
 
 
     def __get_kvmaps(self):
-        T = self._metadata.get_data("kvmaps", "uri_root = '%s' AND ems_id = %d" % (self._conn._Connection__uri_root, self._ems_id))
+        filter = "ems_id = %d" % self._ems_id
+        if 'uri_root' in self._metadata.get_data("kvmaps").columns:
+            filter += " AND uri_root = '%s'" % self._conn._Connection__uri_root
+        T = self._metadata.get_data("kvmaps", filter)
         return T
 
 
     def __save_kvmaps(self):
         if len(self._trees['kvmaps']) > 0:
-            self._metadata.delete_data("kvmaps", "uri_root = '%s' AND ems_id = %d" % (self._conn._Connection__uri_root, self._ems_id))
+            filter = "ems_id = %d" % self._ems_id
+            if 'uri_root' in self._metadata.get_data("kvmaps").columns:
+                filter += " AND uri_root = '%s'" % self._conn._Connection__uri_root
+            self._metadata.delete_data("kvmaps", filter)
             self._metadata.append_data("kvmaps", self._trees['kvmaps'])
 
 
@@ -138,20 +150,22 @@ class Flight(object):
                                        body=body)
         d1 = []
         if len(d['databases']) > 0:
-            d1 = [{'uri_root': parent['uri_root'],
+            d1 = [{'uri_root': parent['uri_root'] if 'uri_root' in parent.keys() else '',
                    'ems_id': parent['ems_id'],
                    'id': x['id'],
                    'nodetype': 'database',
                    'name': x['pluralName'],
                    'parent_id': parent['id']} for x in d['databases']]
+            [d.pop('uri_root') for d in d1 if d['uri_root'] == '']
         d2 = []
         if len(d['groups']) > 0:
-            d2 = [{'uri_root': parent['uri_root'],
+            d2 = [{'uri_root': parent['uri_root'] if 'uri_root' in parent.keys() else '',
                    'ems_id': parent['ems_id'],
                    'id': x['id'],
                    'nodetype': 'database_group',
                    'name': x['name'],
                    'parent_id': parent['id']} for x in d['groups']]
+            [d.pop('uri_root') for d in d2 if d['uri_root'] == '']
         return d1, d2
 
 
@@ -164,7 +178,7 @@ class Flight(object):
                                        body=body)
         d1 = []
         if len(d['fields']) > 0:
-            d1 = [{'uri_root': parent['uri_root'],
+            d1 = [{'uri_root': parent['uri_root'] if 'uri_root' in parent.keys() else '',
                    'ems_id': parent['ems_id'],
                    'db_id' : self._db_id,
                    'id': x['id'],
@@ -172,9 +186,10 @@ class Flight(object):
                    'type': x['type'],
                    'name': x['name'],
                    'parent_id': parent['id']} for x in d['fields']]
+            [d.pop('uri_root') for d in d1 if d['uri_root'] == '']
         d2 = []
         if len(d['groups']) > 0:
-            d2 = [{'uri_root': parent['uri_root'],
+            d2 = [{'uri_root': parent['uri_root'] if 'uri_root' in parent.keys() else '',
                    'ems_id': parent['ems_id'],
                    'db_id': self._db_id,
                    'id': x['id'],
@@ -182,6 +197,7 @@ class Flight(object):
                    'type': None,
                    'name': x['name'],
                    'parent_id': parent['id']} for x in d['groups']]
+            [d.pop('uri_root') for d in d2 if d['uri_root'] == '']
         return d1, d2
 
 

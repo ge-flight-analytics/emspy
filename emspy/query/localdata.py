@@ -70,7 +70,7 @@ class LocalData(object):
 			df = pd.read_sql_query(q, self._conn)
 
 			# Strange columns appear. Get only the actual columns
-			return df[LocalData.table_info[table_name]]		
+			return df[[col for col in LocalData.table_info[table_name] if col in df]]
 		return pd.DataFrame(columns = LocalData.table_info[table_name])
 
 
