@@ -124,7 +124,7 @@ class FltQuery(Query):
 
 		for pattern in ['[=!<>]=?'] + list(sp_ops.keys()):
 			a = re.search(
-				"(.*)(%s)(.*)(%s)(.*)|(.*)(%s)(.*)".replace('%s', pattern),
+				"(.*)\s+(%s)\s+(.*)\s+(%s)\s+(.*)|(.*)\s+(%s)\s+(.*)".replace('%s', pattern),
 				expr
 			)
 			if a is not None and len([s for s in a.groups() if s is not None]):
@@ -540,13 +540,13 @@ def _discrete_filter(op, d, flt):
 
 def _number_filter(op, d):
 
-	if len(op) == 1:
+	if isinstance(op, str):
 		if op in basic_ops:
 			t_op = basic_ops[op]
 			fltr = _filter_fmt1(t_op, d[0], d[1])
 		else:
 			raise ValueError("%s: Unsupported conditional operator for number field type." % op)
-	elif len(op) == 2:
+	elif isinstance(op, list):
 		if op[1] in between_ops[op[0]]:
 			t_op = between_ops[op[0]][op[1]]
 			fltr = _filter_fmt1(t_op, d[0], d[1], d[2])

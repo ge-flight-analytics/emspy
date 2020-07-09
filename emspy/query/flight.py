@@ -23,6 +23,7 @@ class Flight(object):
         self._trees  = {'fieldtree': None, 'dbtree': None, 'kvmaps': None}
         self._fields = []
         self.__cntr = 0
+        self._uri_root = [value for key, value in self._conn.__dict__.items() if 'uri_root' in key][0]
 
         # Retreive the field tree data from local storage. If it doesn't exist, generate a new
         # default one.
@@ -77,11 +78,11 @@ class Flight(object):
     def __get_dbtree(self):
         filter = "ems_id = %d" % self._ems_id
         if 'uri_root' in self._metadata.get_data("dbtree").columns:
-            filter += " AND uri_root = '%s'" % self._conn._Connection__uri_root
+            filter += " AND uri_root = '%s'" % self._uri_root
         T = self._metadata.get_data("dbtree", filter)
         if len(T) < 1:
             dbroot = {
-                'uri_root': self._conn._Connection__uri_root,
+                'uri_root': self._uri_root,
                 'ems_id': self._ems_id,
                 'id': "[-hub-][entity-type-group][[--][internal-type-group][root]]",
                 'name': "<root>",
@@ -100,7 +101,7 @@ class Flight(object):
         if len(self._trees['dbtree']) > 0:
             filter = "ems_id = %d" % self._ems_id
             if 'uri_root' in self._metadata.get_data("dbtree").columns:
-                filter += " AND uri_root = '%s'" % self._conn._Connection__uri_root
+                filter += " AND uri_root = '%s'" % self._uri_root
             self._metadata.delete_data("dbtree", filter)
             self._metadata.append_data("dbtree", self._trees['dbtree'])
 
@@ -108,7 +109,7 @@ class Flight(object):
     def __get_kvmaps(self):
         filter = "ems_id = %d" % self._ems_id
         if 'uri_root' in self._metadata.get_data("kvmaps").columns:
-            filter += " AND uri_root = '%s'" % self._conn._Connection__uri_root
+            filter += " AND uri_root = '%s'" % self._uri_root
         T = self._metadata.get_data("kvmaps", filter)
         return T
 
@@ -117,7 +118,7 @@ class Flight(object):
         if len(self._trees['kvmaps']) > 0:
             filter = "ems_id = %d" % self._ems_id
             if 'uri_root' in self._metadata.get_data("kvmaps").columns:
-                filter += " AND uri_root = '%s'" % self._conn._Connection__uri_root
+                filter += " AND uri_root = '%s'" % self._uri_root
             self._metadata.delete_data("kvmaps", filter)
             self._metadata.append_data("kvmaps", self._trees['kvmaps'])
 
@@ -434,7 +435,7 @@ class Flight(object):
                                                  uri_args=(self._ems_id, self._db_id, fld_id))
             km = content['discreteValues']
             kmap = pd.DataFrame({
-                'uri_root': self._conn._Connection__uri_root,
+                'uri_root': self._uri_root,
                 'ems_id': self._ems_id,
                 'id': fld_id,
                 'key': list(km.keys()),
