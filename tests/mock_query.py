@@ -1,5 +1,8 @@
+import os
 from builtins import object
 from emspy.query import FltQuery
+from mock_connection import MockConnection
+
 
 class MockQuery(object):
     def __init__(self, conn, ems_name):
@@ -28,3 +31,29 @@ class MockFltQuery(FltQuery):
         self._ems_id 	= 1
         self._init_assets(data_file)
         self.reset()
+
+
+def MockFilterQuery(field, dbname='mock_metadata.db'):
+    test_path = os.path.dirname(os.path.realpath(__file__))
+    sys = 'ems24-app'
+    c = MockConnection(user='', pwd='')
+    query = MockFltQuery(c, sys, data_file=os.path.join(test_path, dbname))
+    query.set_database('FDW Flights')
+    query.update_fieldtree(
+        'Aircraft Information',
+        exclude_tree=[
+            'Airframe Information',
+            'Engine Information',
+            'Fleet Information'
+        ]
+    )
+    query.update_fieldtree(
+        'Flight Information',
+        exclude_tree=[
+            'Processing',
+            'Date Times',
+            'FlightPulse'
+        ]
+    )
+    query.select(field)
+    return query
