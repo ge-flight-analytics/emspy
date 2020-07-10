@@ -1,12 +1,15 @@
+import os
 import pytest
 from mock_connection import MockConnection
 from mock_query import MockFltQuery
+
+test_path = os.path.dirname(os.path.realpath(__file__))
 
 
 def MockFilterQuery(field):
     sys = 'ems24-app'
     c = MockConnection(user='', pwd='')
-    query = MockFltQuery(c, sys, data_file='mock_metadata.db')
+    query = MockFltQuery(c, sys, data_file=os.path.join(test_path, 'mock_metadata.db'))
     query.set_database('FDW Flights')
     query.update_fieldtree(
         'Aircraft Information',
@@ -208,5 +211,3 @@ def test_notIn():
     query = MockFilterQuery('Flight Record')
     with pytest.raises(ValueError):
         query.filter("'Flight Record' not in ['17000', '17001', '17002']")
-
-
