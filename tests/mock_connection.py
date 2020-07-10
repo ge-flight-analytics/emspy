@@ -2,7 +2,11 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 from future import standard_library
-from urllib.error import HTTPError
+
+try:
+    from urllib.error import HTTPError
+except:
+    from urllib2 import HTTPError
 
 standard_library.install_aliases()
 import pprint as pp

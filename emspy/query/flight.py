@@ -157,7 +157,9 @@ class Flight(object):
                    'nodetype': 'database',
                    'name': x['pluralName'],
                    'parent_id': parent['id']} for x in d['databases']]
-            [d.pop('uri_root') for d in d1 if d['uri_root'] == '']
+            for _d in d1:
+                if _d['uri_root'] == '':
+                    _d.pop('uri_root')
         d2 = []
         if len(d['groups']) > 0:
             d2 = [{'uri_root': parent['uri_root'] if 'uri_root' in parent.keys() else '',
@@ -166,7 +168,9 @@ class Flight(object):
                    'nodetype': 'database_group',
                    'name': x['name'],
                    'parent_id': parent['id']} for x in d['groups']]
-            [d.pop('uri_root') for d in d2 if d['uri_root'] == '']
+            for _d in d2:
+                if _d['uri_root'] == '':
+                    _d.pop('uri_root')
         return d1, d2
 
 
@@ -187,7 +191,9 @@ class Flight(object):
                    'type': x['type'],
                    'name': x['name'],
                    'parent_id': parent['id']} for x in d['fields']]
-            [d.pop('uri_root') for d in d1 if d['uri_root'] == '']
+            for _d in d1:
+                if _d['uri_root'] == '':
+                    _d.pop('uri_root')
         d2 = []
         if len(d['groups']) > 0:
             d2 = [{'uri_root': parent['uri_root'] if 'uri_root' in parent.keys() else '',
@@ -198,7 +204,9 @@ class Flight(object):
                    'type': None,
                    'name': x['name'],
                    'parent_id': parent['id']} for x in d['groups']]
-            [d.pop('uri_root') for d in d2 if d['uri_root'] == '']
+            for _d in d2:
+                if _d['uri_root'] == '':
+                    _d.pop('uri_root')
         return d1, d2
 
 

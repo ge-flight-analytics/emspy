@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from future.utils import string_types
 from builtins import zip
 from builtins import str
 from emspy.query import *
@@ -539,8 +540,7 @@ def _discrete_filter(op, d, flt):
 
 
 def _number_filter(op, d):
-
-	if isinstance(op, str):
+	if isinstance(op, string_types):
 		if op in basic_ops:
 			t_op = basic_ops[op]
 			fltr = _filter_fmt1(t_op, d[0], d[1])
