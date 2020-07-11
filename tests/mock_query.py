@@ -4,6 +4,9 @@ from emspy.query import FltQuery
 from mock_connection import MockConnection
 
 
+test_path = os.path.dirname(os.path.realpath(__file__))
+
+
 class MockQuery(object):
     def __init__(self, conn, ems_name):
         self._conn 		= conn
@@ -33,11 +36,10 @@ class MockFltQuery(FltQuery):
         self.reset()
 
 
-def MockFilterQuery(field, dbname='mock_metadata.db'):
-    test_path = os.path.dirname(os.path.realpath(__file__))
+def MockFilterQuery(field, dbname=os.path.join(test_path, 'mock_metadata.db')):
     sys = 'ems24-app'
     c = MockConnection(user='', pwd='')
-    query = MockFltQuery(c, sys, data_file=os.path.join(test_path, dbname))
+    query = MockFltQuery(c, sys, data_file=dbname)
     query.set_database('FDW Flights')
     query.update_fieldtree(
         'Aircraft Information',

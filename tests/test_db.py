@@ -153,8 +153,8 @@ def create_tmpDB(legacy=False):
             );
             INSERT INTO dbtree(uri_root, ems_id, id, name, nodetype, parent_id) 
             VALUES(
-                'https://ems.efoqa.com/api',
-                3,
+                'https://fas.efoqa.com/api',
+                1,
                 '[-hub-][entity-type-group][[--][internal-type-group][root]]',
                 '<root>',
                 'root',
@@ -162,8 +162,8 @@ def create_tmpDB(legacy=False):
             );
             INSERT INTO dbtree(uri_root, ems_id, id, name, nodetype, parent_id) 
             VALUES(
-                'https://ems.efoqa.com/api',
-                3,
+                'https://fas.efoqa.com/api',
+                1,
                 '[-hub-][entity-type-group][[ems-core][internal-type-group][fdw-types]]',
                 'FDW',
                 'database_group',
@@ -171,8 +171,8 @@ def create_tmpDB(legacy=False):
             );
             INSERT INTO dbtree(uri_root, ems_id, id, name, nodetype, parent_id) 
             VALUES(
-                'https://ems.efoqa.com/api',
-                3,
+                'https://fas.efoqa.com/api',
+                1,
                 '[ems-core][entity-type][foqa-flights]',
                 'FDW Flights',
                 'database',
@@ -180,8 +180,8 @@ def create_tmpDB(legacy=False):
             );
             INSERT INTO kvmaps(uri_root, ems_id, id, key, value) 
             VALUES(
-                'https://ems.efoqa.com/api',
-                3,
+                'https://fas.efoqa.com/api',
+                1,
                 '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[airframe-engine-field-set][base-field][engine-series-2]]]',
                 0,
                 'Unknown'
