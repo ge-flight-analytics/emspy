@@ -1,6 +1,6 @@
 import pytest
 from mock_connection import MockConnection
-from mock_query import MockFltQuery
+from mock_query import MockFltQuery, MockFilterQuery
 
 
 def get_filter(query):
