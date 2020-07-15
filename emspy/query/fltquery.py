@@ -125,6 +125,11 @@ class FltQuery(Query):
 
 		any_valid_match = 0
 		for pattern in ['[=!<>]=?'] + list(sp_ops.keys()):
+			# The regular expression looks for either of these patterns in the filter:
+			# 1. <variable> <operator> <value> (i.e. "'x' < '1'")
+			# 2. <value> <operator> <variable> <operator> <value> (i.e. "'0' < 'x' < '1'")
+			# Pattern 1 is the standard for filtering
+			# Pattern 2 is only used for 'between' filtering
 			match = re.search(
 				"(.*)\s+(%s)\s+(.*)\s+(%s)\s+(.*)|(.*)\s+(%s)\s+(.*)".replace('%s', pattern),
 				expr
@@ -147,8 +152,14 @@ class FltQuery(Query):
 		fld_type = None
 		val_info = []
 
+		# If the expression vector contains 3 elements the filter is in the form
+		# <variable> <operator> <value>
+		# The operator is the second item of the list
 		if len(expr_vec) == 3:
 			op = expr_vec[1]
+		# If the expression vector contains 5 elements the filter is in the form
+		# <value> <operator> <variable> <operator> <value>
+		# The operators are the second and fourth elements of the list
 		elif len(expr_vec) == 5:
 			op = [expr_vec[1], expr_vec[3]]
 

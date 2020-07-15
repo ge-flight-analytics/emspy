@@ -7,7 +7,7 @@ def get_filter(query):
     return query._FltQuery__queryset['filter']['args'][0]['value']
 
 
-def test_equal():
+def test_number_equal():
     query = MockFilterQuery('Flight Record')
     query.filter("'Flight Record' == '17000'")
     filter = get_filter(query)
@@ -15,14 +15,14 @@ def test_equal():
     assert filter['args'][0] == {
         'type': 'field',
         'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
-
     }
     assert filter['args'][1] == {
         'type': 'constant',
         'value': '17000'
     }
 
-def test_notEqual():
+
+def test_number_notEqual():
     query = MockFilterQuery('Flight Record')
     query.filter("'Flight Record' != '17000'")
     filter = get_filter(query)
@@ -30,14 +30,14 @@ def test_notEqual():
     assert filter['args'][0] == {
         'type': 'field',
         'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
-
     }
     assert filter['args'][1] == {
         'type': 'constant',
         'value': '17000'
     }
 
-def test_greaterThan():
+
+def test_number_greaterThan():
     query = MockFilterQuery('Flight Record')
     query.filter("'Flight Record' > '17000'")
     filter = get_filter(query)
@@ -45,14 +45,13 @@ def test_greaterThan():
     assert filter['args'][0] == {
         'type': 'field',
         'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
-
     }
     assert filter['args'][1] == {
         'type': 'constant',
         'value': '17000'
     }
 
-def test_greaterThanOrEqual():
+def test_number_greaterThanOrEqual():
     query = MockFilterQuery('Flight Record')
     query.filter("'Flight Record' >= '17000'")
     filter = get_filter(query)
@@ -60,14 +59,14 @@ def test_greaterThanOrEqual():
     assert filter['args'][0] == {
         'type': 'field',
         'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
-
     }
     assert filter['args'][1] == {
         'type': 'constant',
         'value': '17000'
     }
 
-def test_lessThan():
+
+def test_number_lessThan():
     query = MockFilterQuery('Flight Record')
     query.filter("'Flight Record' < '17000'")
     filter = get_filter(query)
@@ -75,14 +74,14 @@ def test_lessThan():
     assert filter['args'][0] == {
         'type': 'field',
         'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
-
     }
     assert filter['args'][1] == {
         'type': 'constant',
         'value': '17000'
     }
 
-def test_lessThanOrEqual():
+
+def test_number_lessThanOrEqual():
     query = MockFilterQuery('Flight Record')
     query.filter("'Flight Record' <= '17000'")
     filter = get_filter(query)
@@ -90,14 +89,14 @@ def test_lessThanOrEqual():
     assert filter['args'][0] == {
         'type': 'field',
         'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
-
     }
     assert filter['args'][1] == {
         'type': 'constant',
         'value': '17000'
     }
 
-def test_notBetweenExclusive():
+
+def test_number_notBetweenExclusive():
     query = MockFilterQuery('Flight Record')
     query.filter("'15000' > 'Flight Record' > '17000'")
     filter = get_filter(query)
@@ -105,7 +104,6 @@ def test_notBetweenExclusive():
     assert filter['args'][0] == {
         'type': 'field',
         'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
-
     }
     assert filter['args'][1] == {
         'type': 'constant',
@@ -116,7 +114,8 @@ def test_notBetweenExclusive():
         'value': '17000'
     }
 
-def test_betweenExclusive():
+
+def test_number_betweenExclusive():
     query = MockFilterQuery('Flight Record')
     query.filter("'15000' < 'Flight Record' < '17000'")
     filter = get_filter(query)
@@ -124,7 +123,6 @@ def test_betweenExclusive():
     assert filter['args'][0] == {
         'type': 'field',
         'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
-
     }
     assert filter['args'][1] == {
         'type': 'constant',
@@ -135,7 +133,8 @@ def test_betweenExclusive():
         'value': '17000'
     }
 
-def test_betweenInclusive():
+
+def test_number_betweenInclusive():
     query = MockFilterQuery('Flight Record')
     query.filter("'15000' <= 'Flight Record' <= '17000'")
     filter = get_filter(query)
@@ -143,7 +142,6 @@ def test_betweenInclusive():
     assert filter['args'][0] == {
         'type': 'field',
         'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
-
     }
     assert filter['args'][1] == {
         'type': 'constant',
@@ -154,7 +152,8 @@ def test_betweenInclusive():
         'value': '17000'
     }
 
-def test_notBetweenInclusive():
+
+def test_number_notBetweenInclusive():
     query = MockFilterQuery('Flight Record')
     query.filter("'15000' >= 'Flight Record' >= '17000'")
     filter = get_filter(query)
@@ -162,7 +161,6 @@ def test_notBetweenInclusive():
     assert filter['args'][0] == {
         'type': 'field',
         'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
-
     }
     assert filter['args'][1] == {
         'type': 'constant',
@@ -173,12 +171,58 @@ def test_notBetweenInclusive():
         'value': '17000'
     }
 
-def test_in():
+
+def test_number_in():
     query = MockFilterQuery('Flight Record')
     with pytest.raises(ValueError):
         query.filter("'Flight Record' in ['17000', '17001', '17002']")
 
-def test_notIn():
+
+def test_number_notIn():
     query = MockFilterQuery('Flight Record')
     with pytest.raises(ValueError):
         query.filter("'Flight Record' not in ['17000', '17001', '17002']")
+
+
+def test_dateTime_dateTimeBefore():
+    query = MockFilterQuery('Flight Date (Exact)')
+    query.filter("'Flight Date (Exact)' < '2020-01-01 00:00:00+00:00'")
+    filter = get_filter(query)
+    assert filter['operator'] == 'dateTimeBefore'
+    assert filter['args'][0] == {
+        'type': 'field',
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.exact-date]]]'
+    }
+    assert filter['args'][1] == {
+        'type': 'constant',
+        'value': '2020-01-01 00:00:00+00:00'
+    }
+    assert filter['args'][2] == {
+        'type': 'constant',
+        'value': 'Utc'
+    }
+
+
+def test_dateTime_dateTimeOnAfter():
+    query = MockFilterQuery('Flight Date (Exact)')
+    query.filter("'Flight Date (Exact)' >= '2020-01-01 00:00:00+00:00'")
+    filter = get_filter(query)
+    assert filter['operator'] == 'dateTimeOnAfter'
+    assert filter['args'][0] == {
+        'type': 'field',
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.exact-date]]]'
+    }
+    assert filter['args'][1] == {
+        'type': 'constant',
+        'value': '2020-01-01 00:00:00+00:00'
+    }
+    assert filter['args'][2] == {
+        'type': 'constant',
+        'value': 'Utc'
+    }
+
+
+def test_dateTime_dateTimeRange():
+    query = MockFilterQuery('Flight Date (Exact)')
+    with pytest.raises(ValueError):
+        query.filter("'2020-01-01 00:00:00+00:00' <= 'Flight Date (Exact)' <= '2020-01-01 00:00:00+00:00'")
