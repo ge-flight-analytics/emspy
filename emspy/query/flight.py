@@ -76,10 +76,7 @@ class Flight(object):
 
 
     def __get_dbtree(self):
-        filter = "ems_id = %d" % self._ems_id
-        if 'uri_root' in self._metadata.get_data("dbtree").columns:
-            filter += " AND uri_root = '%s'" % self._uri_root
-        T = self._metadata.get_data("dbtree", filter)
+        T = self._metadata.get_data("dbtree", self.__get_filter('dbtree'))
         if len(T) < 1:
             dbroot = {
                 'uri_root': self._uri_root,
@@ -99,27 +96,18 @@ class Flight(object):
 
     def __save_dbtree(self):
         if len(self._trees['dbtree']) > 0:
-            filter = "ems_id = %d" % self._ems_id
-            if 'uri_root' in self._metadata.get_data("dbtree").columns:
-                filter += " AND uri_root = '%s'" % self._uri_root
-            self._metadata.delete_data("dbtree", filter)
+            self._metadata.delete_data("dbtree", self.__get_filter('dbtree'))
             self._metadata.append_data("dbtree", self._trees['dbtree'])
 
 
     def __get_kvmaps(self):
-        filter = "ems_id = %d" % self._ems_id
-        if 'uri_root' in self._metadata.get_data("kvmaps").columns:
-            filter += " AND uri_root = '%s'" % self._uri_root
-        T = self._metadata.get_data("kvmaps", filter)
+        T = self._metadata.get_data("kvmaps", self.__get_filter('kvmaps'))
         return T
 
 
     def __save_kvmaps(self):
         if len(self._trees['kvmaps']) > 0:
-            filter = "ems_id = %d" % self._ems_id
-            if 'uri_root' in self._metadata.get_data("kvmaps").columns:
-                filter += " AND uri_root = '%s'" % self._uri_root
-            self._metadata.delete_data("kvmaps", filter)
+            self._metadata.delete_data("kvmaps", self.__get_filter('kvmaps'))
             self._metadata.append_data("kvmaps", self._trees['kvmaps'])
 
 
@@ -474,6 +462,12 @@ class Flight(object):
         if len(key) == 0:
             raise ValueError("%s could not be found from the list of the field values." % value)
         return int(key.values[0])
+
+    def __get_filter(self, tree):
+        filter = "ems_id = %d" % self._ems_id
+        if 'uri_root' in self._metadata.get_data(tree).columns:
+            filter += " AND uri_root = '%s'" % self._uri_root
+        return filter
 
 
 def get_shortest(fields):
