@@ -124,16 +124,17 @@ class FltQuery(Query):
 		import re
 
 		for pattern in ['[=!<>]=?'] + list(sp_ops.keys()):
-			a = re.search(
+			match = re.search(
 				"(.*)\s+(%s)\s+(.*)\s+(%s)\s+(.*)|(.*)\s+(%s)\s+(.*)".replace('%s', pattern),
 				expr
 			)
-			if a is not None and len([s for s in a.groups() if s is not None]):
+			any_valid_match = len([group for group in match.groups() if group is not None])
+			if match is not None and any_valid_match:
 				break
 
-		if a is None or not len([s for s in a.groups() if s is not None]):
+		if match is None or not any_valid_match:
 			sys.exit("Cannot find any valid conditional operator from the given string expression.")
-		splitted = [s.strip() for s in a.groups() if s is not None]
+		splitted = [group.strip() for group in match.groups() if group is not None]
 		return splitted
 
 
