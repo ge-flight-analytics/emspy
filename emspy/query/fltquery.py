@@ -514,10 +514,12 @@ def _filter_fmt1(op, *args):
 
 
 def _boolean_filter(op, d):
-
+	if len(d) != 2:
+		raise ValueError('Unsupported conditional operator for boolean field.')
 	fld_info = d[0]
 	val_info = d[1]
-	if type(val_info['value'])!=bool: raise ValueError("%s: use a boolean value." % val_info['value'])
+	if not isinstance(val_info['value'], bool):
+		raise ValueError("%s: use a boolean value." % val_info['value'])
 	if op == "==":
 		t_op = 'is'+str(val_info['value'])
 	elif op == "!=":
@@ -532,24 +534,27 @@ def _boolean_filter(op, d):
 def _discrete_filter(op, d, flt):
 	fld_info = d[0]
 
-	if op in list(basic_ops.keys()):
-		# Single input basic coniditonal operation
-		t_op = basic_ops[op]
-		val_info = d[1]
-		vid  = flt.get_value_id(val_info['value'], field_id = fld_info['value'])
-		val_info['value'] = vid
-		fltr = _filter_fmt1(t_op, fld_info, val_info)
+	if not isinstance(op, list):
+		if op in list(basic_ops.keys()):
+			# Single input basic coniditonal operation
+			t_op = basic_ops[op]
+			val_info = d[1]
+			vid  = flt.get_value_id(val_info['value'], field_id = fld_info['value'])
+			val_info['value'] = vid
+			fltr = _filter_fmt1(t_op, fld_info, val_info)
 
-	elif op.strip() in ["in", "not in"]:
-		t_op = sp_ops[op]
-		val_list = [
-			{'type': x['type'], 'value': flt.get_value_id(x['value'], field_id=fld_info['value'])}
-			for x in d[1:]
-		]
-		inp = [fld_info] + val_list
-		fltr = _filter_fmt1(t_op, *inp)
+		elif op.strip() in ["in", "not in"]:
+			t_op = sp_ops[op]
+			val_list = [
+				{'type': x['type'], 'value': flt.get_value_id(x['value'], field_id=fld_info['value'])}
+				for x in d[1:]
+			]
+			inp = [fld_info] + val_list
+			fltr = _filter_fmt1(t_op, *inp)
+		else:
+			raise ValueError("%s: Unsupported conditional operator for discrete field type." % op)
 	else:
-		raise ValueError("%s: Unsupported conditional operator for discrete field type." % op)
+		raise ValueError("%s: Unsupported conditional operators for discrete field type." % op)
 	return fltr
 
 
@@ -571,17 +576,17 @@ def _number_filter(op, d):
 
 
 def _string_filter(op, d):
-
-	if op in ["==", "!="]:
-		t_op = basic_ops[op]
-		fltr = _filter_fmt1(t_op, d[0], d[1])
-
-	elif op in [" in ", " not in "]:
-		t_op = sp_ops[op]
-		fltr = _filter_fmt1(t_op, *d)
-
+	if not isinstance(op, list):
+		if op in ["==", "!="]:
+			t_op = basic_ops[op]
+			fltr = _filter_fmt1(t_op, d[0], d[1])
+		elif op.strip() in ["in", "not in"]:
+			t_op = sp_ops[op]
+			fltr = _filter_fmt1(t_op, *d)
+		else:
+			raise ValueError("%s: Unsupported conditional operator for string field type." % op)
 	else:
-		raise ValueError("%s: Unsupported conditional operator for string field type." % op)
+		raise ValueError("%s: Unsupported conditional operators for string field type." % op)
 	return fltr
 
 
@@ -594,13 +599,16 @@ def _datetime_filter(op, d):
 		">=": "dateTimeOnAfter"
 	}
 
-	if op in list(date_ops.keys()):
-		t_op = date_ops[op]
-		fltr = _filter_fmt1(t_op, d[0], d[1])
-		# Additional json attribute to specify this is UTC time
-		fltr['value']['args'].append({'type':'constant', 'value': 'Utc'})
+	if not isinstance(op, list):
+		if op in list(date_ops.keys()):
+			t_op = date_ops[op]
+			fltr = _filter_fmt1(t_op, d[0], d[1])
+			# Additional json attribute to specify this is UTC time
+			fltr['value']['args'].append({'type':'constant', 'value': 'Utc'})
+		else:
+			raise ValueError("%s: Unsupported conditional operator for datetime field type." % op)
 	else:
-		raise ValueError("%s: Unsupported conditional operator for datetime field type." % op)
+		raise ValueError("%s: Unsupported conditional operators for datetime field type." % op)
 	return fltr
 
 
