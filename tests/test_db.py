@@ -199,7 +199,7 @@ def assert_tree(query, tree, legacy=False):
     else:
         assert 'uri_root' in tree.columns
         assert len(tree['uri_root'].unique()) == 1
-        assert all(tree['uri_root'] == query._conn._MockConnection__uri_root)
+        assert all(tree['uri_root'] == query._conn._uri_root)
     assert len(tree['ems_id'].unique()) == 1
     assert all(tree['ems_id'] == query._ems_id)
 

@@ -23,7 +23,7 @@ class Connection(object):
 		self.__proxies      = proxies
 		self.__ntrials      = 0
 		self.__max_trials   = max_trials
-		self.__uri_root     = None
+		self._uri_root     = None
 		self.__ignore_ssl_errors = ignore_ssl_errors
 		self.token 			= None
 		self.token_type 	= None
@@ -31,9 +31,9 @@ class Connection(object):
 		# We assign the uri root to a member variable up front, and use that everywhere to
 		# simplify. In order to use an alternate uri root, it must be specified in the constructor.
 		if server_url is not None:
-			self.__uri_root = server_url
+			self._uri_root = server_url
 		else:
-			self.__uri_root = common.uri_root[server]
+			self._uri_root = common.uri_root[server]
 
 		if (user is not None) and (pwd is not None):
 			self.connect(user, pwd, proxies, verbose)
@@ -88,7 +88,7 @@ class Connection(object):
 
 		# If uri_keys are given, find the uri from the uris dictionary
 		if uri_keys is not None:
-			uri    = self.__uri_root + common.uris[uri_keys[0]][uri_keys[1]]
+			uri    = self._uri_root + common.uris[uri_keys[0]][uri_keys[1]]
 
 		# Provide the input to the request
 		if uri_args is not None:

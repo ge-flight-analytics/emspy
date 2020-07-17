@@ -23,7 +23,7 @@ class Flight(object):
         self._trees  = {'fieldtree': None, 'dbtree': None, 'kvmaps': None}
         self._fields = []
         self.__cntr = 0
-        self._uri_root = self.__get_uri_root()
+        self._uri_root = conn._uri_root
 
         # Retreive the field tree data from local storage. If it doesn't exist, generate a new
         # default one.
@@ -468,9 +468,6 @@ class Flight(object):
         if 'uri_root' in self._metadata.get_data(tree).columns:
             filter += " AND uri_root = '%s'" % self._uri_root
         return filter
-
-    def __get_uri_root(self):
-        return [value for key, value in self._conn.__dict__.items() if 'uri_root' in key][0]
 
 
 def get_shortest(fields):
