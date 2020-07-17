@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from future.utils import string_types
 from builtins import zip
 from builtins import str
+from collections import OrderedDict
 from emspy.query import *
 from .query import Query
 
@@ -492,10 +493,8 @@ between_ops = {
 		'>=': 'notBetweenInclusive'
 	}
 }
-sp_ops = {
-	'not in': 'notIn',
-	'in': 'in'
-}
+sp_ops = OrderedDict([('not in', 'notIn'), ('in', 'in')])
+
 # '=Null': 'isNull', '!=Null': 'isNotNull', 'and': 'And', 'or': 'Or', 'in': 'in', 'not in': 'notIn'
 
 
