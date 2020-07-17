@@ -131,7 +131,7 @@ class FltQuery(Query):
 			# Pattern 1 is the standard for filtering
 			# Pattern 2 is only used for 'between' filtering
 			match = re.search(
-				"(.*)\s+(%s)\s+(.*)\s+(%s)\s+(.*)|(.*)\s+(%s)\s+(.*)".replace('%s', pattern),
+				r"(.*)\s+(%s)\s+(.*)\s+(%s)\s+(.*)|(.*)\s+(%s)\s+(.*)".replace('%s', pattern),
 				expr
 			)
 			if match is not None:
