@@ -1,7 +1,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from future.utils import string_types
 from builtins import zip
 from builtins import str
+from collections import OrderedDict
 from emspy.query import *
 from .query import Query
 
@@ -122,14 +124,25 @@ class FltQuery(Query):
 		'''
 		import re
 
+		any_valid_match = 0
 		for pattern in ['[=!<>]=?'] + list(sp_ops.keys()):
-			a = re.search(pattern, expr)
-			if a is not None:
-				break
+			# The regular expression looks for either of these patterns in the filter:
+			# 1. <variable> <operator> <value> (i.e. "'x' < '1'")
+			# 2. <value> <operator> <variable> <operator> <value> (i.e. "'0' < 'x' < '1'")
+			# Pattern 1 is the standard for filtering
+			# Pattern 2 is only used for 'between' filtering
+			match = re.search(
+				r"(.*)\s+(%s)\s+(.*)\s+(%s)\s+(.*)|(.*)\s+(%s)\s+(.*)".replace('%s', pattern),
+				expr
+			)
+			if match is not None:
+				any_valid_match = len([group for group in match.groups() if group is not None])
+				if any_valid_match:
+					break
 
-		if a is None:
+		if match is None or not any_valid_match:
 			sys.exit("Cannot find any valid conditional operator from the given string expression.")
-		splitted = expr.partition(a.group())
+		splitted = [group.strip() for group in match.groups() if group is not None]
 		return splitted
 
 
@@ -138,13 +151,29 @@ class FltQuery(Query):
 		fld_loc = [False, False]
 		fld_info = None
 		fld_type = None
-		val_info = None
-		op = expr_vec[1]
+		val_info = []
 
-		for i, s in enumerate([expr_vec[0], expr_vec[2]]):
+		# If the expression vector contains 3 elements the filter is in the form
+		# <variable> <operator> <value>
+		# The operator is the second item of the list
+		if len(expr_vec) == 3:
+			op = expr_vec[1]
+		# If the expression vector contains 5 elements the filter is in the form
+		# <value> <operator> <variable> <operator> <value>
+		# The operators are the second and fourth elements of the list
+		elif len(expr_vec) == 5:
+			op = [expr_vec[1], expr_vec[3]]
+
+		# Get the list of operators in the expression
+		op_vec = [op] if not isinstance(op, list) else op
+		# Remove the operator[s] from the expression vector
+		fld_val_vec = [s for s in expr_vec if s not in op_vec]
+		for i, s in enumerate(fld_val_vec):
 			x = eval(s)
-
-			if i == 0:
+			# If the length of the expression vector is 3, the field is the first item in the list.
+			# Otherwise, if the length of the expression vector is 5, the second item in the list
+			# is the field.
+			if i == 0 if len(expr_vec) == 3 else i == 1:
 				fld = self.__flight.search_fields(x)[0]
 				if fld is not None:
 					fld_info = [{'type':'field', 'value': fld['id']}]
@@ -155,9 +184,10 @@ class FltQuery(Query):
 			else:
 				if type(x) != list:
 					x = [x]
-				val_info = [{'type':'constant','value':v} for v in x]
+				val_info += [{'type':'constant','value':v} for v in x]
 
-		if fld_loc[1]:
+		# This logic only applies to standard conditional operators
+		if fld_loc[1] and len(expr_vec) == 3:
 			if '<' in expr_vec[1]:
 				op = expr_vec[1].replace('<','>')
 			else:
@@ -449,14 +479,29 @@ class FltQuery(Query):
 ## Experimental...
 
 basic_ops = {
-	'==': 'equal', '!=': 'notEqual', '<': 'lessThan',
-	'<=': 'lessThanOrEqual', '>': 'greaterThan',
+	'==': 'equal',
+	'!=': 'notEqual',
+	'<': 'lessThan',
+	'<=': 'lessThanOrEqual',
+	'>': 'greaterThan',
 	'>=': 'greaterThanOrEqual'
 }
-sp_ops = {
-	' in ': 'in',
-	' not in ': 'notIn'
+between_ops = {
+	'<': {
+		'<': 'betweenExclusive'
+	},
+	'<=': {
+		'<=': 'betweenInclusive'
+	},
+	'>': {
+		'>': 'notBetweenExclusive'
+	},
+	'>=': {
+		'>=': 'notBetweenInclusive'
+	}
 }
+sp_ops = OrderedDict([('not in', 'notIn'), ('in', 'in')])
+
 # '=Null': 'isNull', '!=Null': 'isNotNull', 'and': 'And', 'or': 'Or', 'in': 'in', 'not in': 'notIn'
 
 
@@ -475,10 +520,13 @@ def _filter_fmt1(op, *args):
 
 
 def _boolean_filter(op, d):
-
+	# Between filters unsupported
+	if len(d) != 2:
+		raise ValueError('Unsupported conditional operator for boolean field.')
 	fld_info = d[0]
 	val_info = d[1]
-	if type(val_info['value'])!=bool: raise ValueError("%s: use a boolean value." % val_info['value'])
+	if not isinstance(val_info['value'], bool):
+		raise ValueError("%s: use a boolean value." % val_info['value'])
 	if op == "==":
 		t_op = 'is'+str(val_info['value'])
 	elif op == "!=":
@@ -493,6 +541,10 @@ def _boolean_filter(op, d):
 def _discrete_filter(op, d, flt):
 	fld_info = d[0]
 
+	# Between filters unsupported
+	if isinstance(op, list):
+		raise ValueError("%s: Unsupported conditional operators for discrete field type." % op)
+
 	if op in list(basic_ops.keys()):
 		# Single input basic coniditonal operation
 		t_op = basic_ops[op]
@@ -500,11 +552,12 @@ def _discrete_filter(op, d, flt):
 		vid  = flt.get_value_id(val_info['value'], field_id = fld_info['value'])
 		val_info['value'] = vid
 		fltr = _filter_fmt1(t_op, fld_info, val_info)
-
-	elif op in [" in ", " not in "]:
+	elif op.strip() in ["in", "not in"]:
 		t_op = sp_ops[op]
-		val_list = [{'type':x['type'], 'value':flt.get_value_id(x['value'], field_id=fld_info['value'])}\
-					 for x in d[1:]]
+		val_list = [
+			{'type': x['type'], 'value': flt.get_value_id(x['value'], field_id=fld_info['value'])}
+			for x in d[1:]
+		]
 		inp = [fld_info] + val_list
 		fltr = _filter_fmt1(t_op, *inp)
 	else:
@@ -513,27 +566,36 @@ def _discrete_filter(op, d, flt):
 
 
 def _number_filter(op, d):
+	if isinstance(op, string_types):
+		if op in basic_ops:
+			t_op = basic_ops[op]
+			fltr = _filter_fmt1(t_op, d[0], d[1])
+		else:
+			raise ValueError("%s: Unsupported conditional operator for number field type." % op)
+	elif isinstance(op, list):
+		if op[1] in between_ops[op[0]]:
+			t_op = between_ops[op[0]][op[1]]
+			fltr = _filter_fmt1(t_op, d[0], d[1], d[2])
+		else:
+			raise ValueError("%s: Unsupported between conditional operators for number field type." % op)
 
-	if op in basic_ops:
-		t_op = basic_ops[op]
-		fltr = _filter_fmt1(t_op, d[0], d[1])
-	else:
-		raise ValueError("%s: Unsupported conditional operator for number field type." % op)
 	return fltr
 
 
 def _string_filter(op, d):
+	# Between filters unsupported
+	if isinstance(op, list):
+		raise ValueError("%s: Unsupported conditional operators for string field type." % op)
 
 	if op in ["==", "!="]:
 		t_op = basic_ops[op]
 		fltr = _filter_fmt1(t_op, d[0], d[1])
-
-	elif op in [" in ", " not in "]:
+	elif op.strip() in ["in", "not in"]:
 		t_op = sp_ops[op]
 		fltr = _filter_fmt1(t_op, *d)
-
 	else:
 		raise ValueError("%s: Unsupported conditional operator for string field type." % op)
+
 	return fltr
 
 
@@ -546,6 +608,10 @@ def _datetime_filter(op, d):
 		">=": "dateTimeOnAfter"
 	}
 
+	# Between filters unsupported
+	if isinstance(op, list):
+		raise ValueError("%s: Unsupported conditional operators for datetime field type." % op)
+
 	if op in list(date_ops.keys()):
 		t_op = date_ops[op]
 		fltr = _filter_fmt1(t_op, d[0], d[1])
@@ -553,9 +619,8 @@ def _datetime_filter(op, d):
 		fltr['value']['args'].append({'type':'constant', 'value': 'Utc'})
 	else:
 		raise ValueError("%s: Unsupported conditional operator for datetime field type." % op)
+
 	return fltr
-
-
 
 
 
