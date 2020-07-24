@@ -19,7 +19,7 @@ if max_numpy_ver:
     numpy_install_rule += ", < {numpy_ver}".format(numpy_ver=max_numpy_ver)
 
 setup(name = 'emspy',
-      version = '0.2.6',
+      version = '0.3.0',
       description = 'A Python EMS RESTful API Client/Wrapper',
       long_description=readme(),
       long_description_content_type="text/markdown",
