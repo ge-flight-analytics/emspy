@@ -15,7 +15,8 @@ def test_number_equal():
     assert len(queryset_filter['args']) == 2
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.uid]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -31,7 +32,8 @@ def test_number_notEqual():
     assert len(queryset_filter['args']) == 2
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.uid]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -47,7 +49,8 @@ def test_number_greaterThan():
     assert len(queryset_filter['args']) == 2
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.uid]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -63,7 +66,8 @@ def test_number_greaterThanOrEqual():
     assert len(queryset_filter['args']) == 2
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.uid]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -79,7 +83,8 @@ def test_number_lessThan():
     assert len(queryset_filter['args']) == 2
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.uid]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -95,7 +100,8 @@ def test_number_lessThanOrEqual():
     assert len(queryset_filter['args']) == 2
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.uid]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -111,7 +117,8 @@ def test_number_notBetweenExclusive():
     assert queryset_filter['operator'] == 'notBetweenExclusive'
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.uid]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -127,17 +134,18 @@ def test_number_betweenExclusive():
     query = MockFilterQuery('Flight Record')
     query.filter("'15000' < 'Flight Record' < '17000'")
     queryset_filter = get_filter(query)
-    assert queryset_filter ['operator'] == 'betweenExclusive'
+    assert queryset_filter['operator'] == 'betweenExclusive'
     assert len(queryset_filter['args']) == 3
-    assert queryset_filter ['args'][0] == {
+    assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.uid]]]'
     }
-    assert queryset_filter ['args'][1] == {
+    assert queryset_filter['args'][1] == {
         'type': 'constant',
         'value': '15000'
     }
-    assert queryset_filter ['args'][2] == {
+    assert queryset_filter['args'][2] == {
         'type': 'constant',
         'value': '17000'
     }
@@ -151,7 +159,8 @@ def test_number_betweenInclusive():
     assert len(queryset_filter['args']) == 3
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.uid]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -171,7 +180,8 @@ def test_number_notBetweenInclusive():
     assert len(queryset_filter['args']) == 3
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.uid]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -203,7 +213,8 @@ def test_dateTime_dateTimeBefore():
     assert len(queryset_filter['args']) == 3
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.exact-date]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.exact-date]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -223,7 +234,8 @@ def test_dateTime_dateTimeOnAfter():
     assert len(queryset_filter['args']) == 3
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.exact-date]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.exact-date]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -239,7 +251,9 @@ def test_dateTime_dateTimeRange():
     # Not implemented, but it exists as an option in the API
     query = MockFilterQuery('Flight Date (Exact)')
     with pytest.raises(ValueError):
-        query.filter("'2019-01-01 00:00:00+00:00' <= 'Flight Date (Exact)' <= '2020-01-01 00:00:00+00:00'")
+        query.filter(
+            "'2019-01-01 00:00:00+00:00' <= 'Flight Date (Exact)' <= '2020-01-01 00:00:00+00:00'"
+        )
 
 
 def test_dateTime_unsupported():
@@ -253,7 +267,9 @@ def test_dateTime_unsupported():
     with pytest.raises(ValueError):
         query.filter("'Flight Date (Exact)' <= '2020-01-01 00:00:00+00:00'")
     with pytest.raises(ValueError):
-        query.filter("'2019-01-01 00:00:00+00:00' < 'Flight Date (Exact)' < '2020-01-01 00:00:00+00:00'")
+        query.filter(
+            "'2019-01-01 00:00:00+00:00' < 'Flight Date (Exact)' < '2020-01-01 00:00:00+00:00'"
+        )
 
 
 def test_boolean_isTrue():
@@ -264,7 +280,8 @@ def test_boolean_isTrue():
     assert len(queryset_filter['args']) == 1
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.exist-takeoff]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.exist-takeoff]]]'
     }
 
 
@@ -276,7 +293,8 @@ def test_boolean_isFalse():
     assert len(queryset_filter['args']) == 1
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.exist-takeoff]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.exist-takeoff]]]'
     }
 
 
@@ -306,7 +324,8 @@ def test_string_equal():
     assert len(queryset_filter['args']) == 2
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.flight-num-str]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.flight-num-str]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -322,7 +341,8 @@ def test_string_notEqual():
     assert len(queryset_filter['args']) == 2
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.flight-num-str]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.flight-num-str]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -338,7 +358,8 @@ def test_string_in():
     assert len(queryset_filter['args']) == 4
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.flight-num-str]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.flight-num-str]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -362,7 +383,8 @@ def test_string_notIn():
     assert len(queryset_filter['args']) == 4
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.flight-num-str]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.flight-num-str]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -406,7 +428,8 @@ def test_discrete_equal():
     assert len(queryset_filter['args']) == 2
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.date-confidence]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.date-confidence]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -422,7 +445,8 @@ def test_discrete_notEqual():
     assert len(queryset_filter['args']) == 2
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.date-confidence]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.date-confidence]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -438,7 +462,8 @@ def test_discrete_greaterThan():
     assert len(queryset_filter['args']) == 2
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.date-confidence]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.date-confidence]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -454,7 +479,8 @@ def test_discrete_greaterThanOrEqual():
     assert len(queryset_filter['args']) == 2
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.date-confidence]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.date-confidence]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -470,7 +496,8 @@ def test_discrete_lessThan():
     assert len(queryset_filter['args']) == 2
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.date-confidence]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.date-confidence]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -486,7 +513,8 @@ def test_discrete_lessThanOrEqual():
     assert len(queryset_filter['args']) == 2
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.date-confidence]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.date-confidence]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -502,7 +530,8 @@ def test_discrete_in():
     assert len(queryset_filter['args']) == 3
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.date-confidence]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.date-confidence]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
@@ -522,7 +551,8 @@ def test_discrete_notIn():
     assert len(queryset_filter['args']) == 3
     assert queryset_filter['args'][0] == {
         'type': 'field',
-        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.date-confidence]]]'
+        'value': '[-hub-][field][[[ems-core][entity-type][foqa-flights]]'
+                 '[[ems-core][base-field][flight.date-confidence]]]'
     }
     assert queryset_filter['args'][1] == {
         'type': 'constant',
