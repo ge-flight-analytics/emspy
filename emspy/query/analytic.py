@@ -11,7 +11,7 @@ class Analytic(object):
 	"""
 	Analytic class
 	"""
-	def __init__(self, conn, ems_id, data_file=LocalData.default_data_file):
+	def __init__(self, conn, ems_id, data_file=LocalData.default_data_file, searchtype='contain'):
 		"""
 		Analytic class initialization
 
@@ -23,11 +23,16 @@ class Analytic(object):
 			EMS system id
 		data_file: str
 			path to local DB file
+		searchtype: str
+			search type to perform:
+				contain: uses the Pandas string method 'contains'
+				match: uses the Pandas string method 'match'
 		"""
 		self._conn = conn
 		self._ems_id = ems_id
 		self._metadata = None
 		self._load_paramtable(data_file)
+		self.searchtype = searchtype
 
 	def _load_paramtable(self, file_name=LocalData.default_data_file):
 		# Load parameter table
@@ -133,7 +138,10 @@ class Analytic(object):
 		if self._param_table.empty:
 			return dict(ems_id="", id="", name="", description="", units="")
 		# If the param table is not empty, do search by keyword
-		bool_idx = self._param_table['name'].str.contains(keyword, case=False, regex=False)
+		if self.searchtype == 'contain':
+			bool_idx = self._param_table['name'].str.contains(keyword, case=False, regex=False)
+		elif self.searchtype == 'match':
+			bool_idx = self._param_table['name'].str.match(keyword, case=False)
 		df = self._param_table[bool_idx]
 		# If the search result is empty, return empty param dict
 		if df.empty:

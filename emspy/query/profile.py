@@ -6,7 +6,7 @@ class Profile(Query):
     """
     A class for performing profile queries in the EMS API.
     """
-    def __init__(self, conn, ems_name, profile_number=None, profile_name=''):
+    def __init__(self, conn, ems_name, profile_number=None, profile_name='', searchtype='contain'):
         """
         Parameters
         ----------
@@ -18,6 +18,10 @@ class Profile(Query):
             A profile number to select.
         profile_name: str
             A profile name.
+        searchtype: str
+            search type to perform:
+                contain: uses the Pandas string method 'contains' on the column as string
+                match: uses the Pandas string method 'match' on the column as string
 
         Raises
         ------
@@ -58,6 +62,7 @@ class Profile(Query):
             raise ValueError("Either profile_number, profile_name, or both must be specified.")
 
         # Decide how to search
+        self.searchtype = searchtype
         self._search_type = 'number' if profile_number is not None else 'name'
         # Perform a search using the specified options
         self._search(self._search_type)
@@ -162,8 +167,12 @@ class Profile(Query):
             else:  # name + inexact search
                 # locate profiles with string in name (case insensitive).
                 res['name_lower'] = res['name'].str.lower()
-                filtered = \
-                    res.loc[res['name_lower'].str.contains(self._input_profile_name.lower()), :]
+                if self.searchtype == 'contain':
+                    filtered = \
+                        res.loc[res['name_lower'].str.contains(self._input_profile_name.lower()), :]
+                elif self.searchtype == 'match':
+                    filtered = \
+                        res.loc[res['name_lower'].str.match(self._input_profile_name.lower()), :]
         elif self._search_type == 'number':  # number search
             # locate rows where the localId matches the input profile number.
             filtered = res.loc[res['localId'] == self._input_profile_number]

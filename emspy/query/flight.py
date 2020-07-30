@@ -22,7 +22,7 @@ class Flight(object):
         'Profile'
     ]
 
-    def __init__(self, conn, ems_id, data_file=LocalData.default_data_file):
+    def __init__(self, conn, ems_id, data_file=LocalData.default_data_file, searchtype='contain'):
         """
         Flight object initialization
 
@@ -34,7 +34,12 @@ class Flight(object):
             EMS system id
         data_file: str
             path to database file
+        searchtype: str
+            search type to perform:
+                contain: uses the Pandas string method 'contains'
+                match: uses the Pandas string method 'match'
         """
+        self.searchtype = searchtype
         self._conn = conn
         self._ems_id = ems_id
         self._db_id = None
@@ -163,8 +168,12 @@ class Flight(object):
         None
         """
         tree = self._trees['dbtree']
-        self._db_id = tree[(tree.nodetype == 'database') &
-                           tree.name.str.contains(_treat_spchar(name), case=False)]['id'].values[0]
+        if self.searchtype == 'contain':
+            self._db_id = tree[(tree.nodetype == 'database') &
+                tree.name.str.contains(_treat_spchar(name), case=False)]['id'].values[0]
+        elif self.searchtype == 'match':
+            self._db_id = tree[(tree.nodetype == 'database') &
+                tree.name.str.match(_treat_spchar(name), case=False)]['id'].values[0]
         self._trees['fieldtree'] = self.__get_fieldtree()
         if self._trees['fieldtree'].empty:
             self.__update_children(self.get_database(), treetype="fieldtree")
@@ -385,11 +394,17 @@ class Flight(object):
             path = _treat_spchar(path)
             if idx == 0:
                 tree = self._trees[treetype]
-                parent = tree[tree.name.str.contains(path, case=False)]
+                if self.searchtype == 'contain':
+                    parent = tree[tree.name.str.contains(path, case=False)]
+                elif self.searchtype == 'match':
+                    parent = tree[tree.name.str.match(path, case=False)]
             else:
                 self.__update_children(parent, treetype=treetype)
                 chld_df = self.__get_children(parent['id'], treetype=treetype)
-                child = chld_df[chld_df.name.str.contains(path, case=False)]
+                if self.searchtype == 'contain':
+                    child = chld_df[chld_df.name.str.contains(path, case=False)]
+                elif self.searchtype == 'match':
+                    child = chld_df[chld_df.name.str.match(path, case=False)]
                 parent = child
             if len(parent) == 0:
                 raise ValueError("Search keyword '%s' did not return any %s group."
@@ -463,18 +478,29 @@ class Flight(object):
                     ff = _treat_spchar(ff)
                     if idx < (len(field)-1):
                         child = child[child.nodetype == "field_group"]
-                        parent_id = child[child.name.str.contains(ff, case=False)]['id'].tolist()
+                        if self.searchtype == 'contain':
+                            parent_id = child[child.name.str.contains(ff, case=False)]['id'].tolist()
+                        elif self.searchtype == 'match':
+                            parent_id = child[child.name.str.match(ff, case=False)]['id'].tolist()
                         tr = self._trees['fieldtree']
                         child = tr[tr.parent_id.isin(parent_id)]
                     else:
-                        child = child[(child.nodetype == "field")
-                                      & child.name.str.contains(ff, case=False)]
+                        if self.searchtype == 'contain':
+                            child = child[(child.nodetype == "field")
+                                          & child.name.str.contains(ff, case=False)]
+                        elif self.searchtype == 'match':
+                            child = child[(child.nodetype == "field")
+                                          & child.name.str.match(ff, case=False)]
                 fres = child
             else:
                 # Simple keyword search
                 tree = self._trees['fieldtree']
-                fres = tree[(tree.nodetype == "field")
-                            & tree.name.str.contains(_treat_spchar(field), case=False)]
+                if self.searchtype == 'contain':
+                    fres = tree[(tree.nodetype == "field")
+                                & tree.name.str.contains(_treat_spchar(field), case=False)]
+                elif self.searchtype == 'match':
+                    fres = tree[(tree.nodetype == "field")
+                                & tree.name.str.match(_treat_spchar(field), case=False)]
 
             if fres.shape[0] == 0:
                 # No returned value. Raise error.
