@@ -169,8 +169,11 @@ class Flight(object):
         """
         tree = self._trees['dbtree']
         if self.searchtype == 'contain':
-            self._db_id = tree[(tree.nodetype == 'database') &
-                tree.name.str.contains(_treat_spchar(name), case=False)]['id'].values[0]
+            dbs = tree[(tree.nodetype == 'database')
+                       & tree.name.str.contains(_treat_spchar(name), case=False)]
+            # Return database with shortest name
+            self._db_id = dbs.loc[dbs['name'].str.len().idxmin(), 'id']
+        # Exact string matching
         elif self.searchtype == 'match':
             self._db_id = tree[(tree.nodetype == 'database') &
                 tree.name.str.match(_treat_spchar(name), case=False)]['id'].values[0]
