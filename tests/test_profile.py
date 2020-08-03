@@ -33,9 +33,9 @@ def test_excess_profile_matches_by_profile_name():
 @patch('emspy.query.query.EMS', MockEMS)
 @patch('emspy.Connection', MockConnection)
 def test_no_profile_matches_by_profile_name():
+    ems_system = 'ems24-app'
+    connection = MockConnection(user='', pwd='')
     with pytest.raises(LookupError):
-        ems_system = 'ems24-app'
-        connection = MockConnection(user='', pwd='')
         # Obviously a profile that would never exist.
         profile = Profile(
             connection,
@@ -47,9 +47,9 @@ def test_no_profile_matches_by_profile_name():
 @patch('emspy.query.query.EMS', MockEMS)
 @patch('emspy.Connection', MockConnection)
 def test_no_profile_matches_by_profile_number():
+    ems_system = 'ems24-app'
+    connection = MockConnection(user='', pwd='')
     with pytest.raises(LookupError):
-        ems_system = 'ems24-app'
-        connection = MockConnection(user='', pwd='')
         # Obviously a profile that would never exist.
         profile = Profile(
             connection,
@@ -67,7 +67,7 @@ def test_one_profile_match_by_profile_name():
         connection,
         ems_system,
         profile_name='Single Real Profile'
-    )  # no profile should match.
+    )  # one profile should match.
     assert profile._profile_name == 'Single Real Profile'
 
 
@@ -130,3 +130,17 @@ def test_bad_profile_name_search():
             ems_system,
             profile_name='A PROFILE THAT SHOULD NEVER EXIST'
         )   # no profiles should match.
+
+
+@patch('emspy.query.query.EMS', MockEMS)
+@patch('emspy.Connection', MockConnection)
+def test_name_search_returns_shortest():
+    ems_system = 'ems24-app'
+    connection = MockConnection(user='', pwd='')
+    profile = Profile(
+        connection,
+        ems_system,
+        profile_name='Single Real Profile',
+        searchtype='contain'
+    )
+    assert profile._profile_name == 'Single Real Profile'

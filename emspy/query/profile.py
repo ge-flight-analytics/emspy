@@ -6,7 +6,7 @@ class Profile(Query):
     """
     A class for performing profile queries in the EMS API.
     """
-    def __init__(self, conn, ems_name, profile_number=None, profile_name='', searchtype='contain'):
+    def __init__(self, conn, ems_name, profile_number=None, profile_name='', searchtype='match'):
         """
         Parameters
         ----------
@@ -48,14 +48,8 @@ class Profile(Query):
         self._ems_id = self.get_ems_id()
 
         # Set up template strings.
-        self._no_matches_name_template =\
-            "Did not find any profiles that could match profile_name: {0}."
-        self._no_matches_num_template =\
-            "Did not find any profiles that could match profile_number: {0}."
-        self._many_matches_name_template =\
-            "Found multiple profiles that could match {0}:\n\n {1}"
-        self._many_matches_num_template =\
-            "Found multiple profiles that could match {0}:\n\n {1}"
+        self._no_matches_template = "Did not find any profiles that could match {0}: {1}"
+        self._many_matches_template = "Found multiple profiles that could match {0}: {1}.\n\n{2}"
 
         # Check that at least one of the profile number/name arguments was passed.
         if profile_number is None and profile_name == '':
@@ -65,7 +59,7 @@ class Profile(Query):
         self.searchtype = searchtype
         self._search_type = 'number' if profile_number is not None else 'name'
         # Perform a search using the specified options
-        self._search(self._search_type)
+        self._search()
 
     def get_glossary(self):
         """
@@ -104,13 +98,13 @@ class Profile(Query):
             A Pandas datafarme containing the events glossary
         """
         if self._guid is not None:
-            resp_h, dict_data = self._conn.request(
+            _, dict_data = self._conn.request(
                 uri_keys=('profile', 'events'),
                 uri_args=(self._ems_id, self._guid)
             )
-            a = pd.DataFrame(dict_data)
-            a.set_index('id', inplace=True)
-            self._events_glossary = a
+            data = pd.DataFrame(dict_data)
+            data.set_index('id', inplace=True)
+            self._events_glossary = data
             return self._events_glossary
         else:
             print("The search results did not return a profile matching the input profile name and "
@@ -135,89 +129,99 @@ class Profile(Query):
         #     print("")
         #     return
 
-    def __set_profile_attributes(self, profile_df):
-        self._guid = profile_df['id'].values[0]
-        self._current_version = profile_df['currentVersion'].values[0]
-        self._library = profile_df['library'].values[0]
-        self._profile_name = profile_df['name'].values[0]
-        self._local_id = profile_df['localId'].values[0]
+    def __set_profile_attributes(self, profile_data):
+        if isinstance(profile_data, pd.DataFrame):
+            profile_data = profile_data.iloc[0]
+        self._guid = profile_data['id']
+        self._current_version = profile_data['currentVersion']
+        self._library = profile_data['library']
+        self._profile_name = profile_data['name']
+        self._local_id = profile_data['localId']
 
     def __request_results(self):
         # get values via API.
-        resp_h, dict_data = self._conn.request(
+        _, dict_data = self._conn.request(
             uri_keys=('profile', 'search'),
             uri_args=self._ems_id,
             body={'search': self._input_profile_name}
         )
-        a = pd.DataFrame.from_dict(dict_data)  # create a DataFrame from the response.
-        self._search_results = a
-        return a
+        data = pd.DataFrame.from_dict(dict_data)  # create a DataFrame from the response.
+        self._search_results = data
+        return data
 
     def __validate_search_results(self, res):
         if len(res) == 0:
-            raise LookupError(self._no_matches_name_template.format(self._input_profile_name))
+            raise LookupError(self._no_matches_template.format(
+                'profile name',
+                self._input_profile_name
+            ))
 
     def __filter_results(self, res):
         filtered = res  # default assignment
         # search can be of three different types: {name+exact, name+inexact, number}
         if self._search_type == 'name':
-            if self._exact_search is True:  # name + exact search
-                # locate profiles using exact string match.
-                filtered = res.loc[res['name'] == self._input_profile_name, :]
-            else:  # name + inexact search
-                # locate profiles with string in name (case insensitive).
-                res['name_lower'] = res['name'].str.lower()
-                if self.searchtype == 'contain':
-                    filtered = \
-                        res.loc[res['name_lower'].str.contains(self._input_profile_name.lower()), :]
-                elif self.searchtype == 'match':
-                    filtered = \
-                        res.loc[res['name_lower'].str.match(self._input_profile_name.lower()), :]
+            if self.searchtype == 'contain':
+                filtered = res.loc[res['name'].str.lower()
+                                              .str.contains(self._input_profile_name.lower()), :]
+            elif self.searchtype == 'match':
+                filtered = res.loc[res['name'].str.lower()
+                                              .str.match(self._input_profile_name.lower()), :]
         elif self._search_type == 'number':  # number search
             # locate rows where the localId matches the input profile number.
             filtered = res.loc[res['localId'] == self._input_profile_number]
+        if isinstance(filtered, pd.Series):
+            filtered = filtered.to_frame(filtered.name).T
         return filtered
 
     def __validate_filtered(self, filtered):
         # Check the filtered values.
         # If only one row is found, set the class attributes using this row.
-        if len(filtered) == 1:
+        if filtered.shape[0] == 1:
             print('Found a profile with the supplied profile number and name.')
-            print('Profile name: {0}, profile number: {1}.'.format(filtered['name'].iloc[0],
-                                                                   filtered['localId'].iloc[0]))
+            print('Profile name: {0}, profile number: {1}.'.format(filtered['name'],
+                                                                   filtered['localId']))
             self.__set_profile_attributes(filtered)
-        # if more than one rows are found (shouldn't be possible) either try again (if we are
-        # searching by name in an inexact manner, we will now try an exact search) or return a
-        # LookupError. Inexact search could lead to more than one match, leaving the potential for
-        # an exact search to narrow to one. It should not be possible to have more than one match
-        # if you are searching with a profile number.
-        elif len(filtered) > 1:
-            match_names = filtered['name'].values
-            match_profiles = filtered['localId'].values
-            match_strings = \
-                ['P' + str(pnum) + ': ' + name for pnum, name in zip(match_profiles, match_names)]
-            match_names_formatted = '\t' + '\n\t'.join(match_strings)  # format string for printing
-            print(self._many_matches_name_template
-                  .format(self._input_profile_name, match_names_formatted))
-            if self._exact_search is False:
-                print('Attempting exact string match.')
-                self._exact_search = True
-                # try using exact string matching to pare down results.
-                filtered = self.__filter_results(filtered)
-                # validate again, using newly obtained exact match results.
-                self.__validate_filtered(filtered)
-            else:
-                raise LookupError(self._many_matches_name_template.format(self._input_profile_name,
-                                                                          match_names_formatted))
-        # if no rows are found, return an error.
-        elif len(filtered) == 0:
-            # choose the right template for the returned error.
-            if self._search_type == 'number':
-                raise LookupError(self._no_matches_num_template.format(self._input_profile_number))
-            elif self._search_type == 'name':
-                raise LookupError(self._no_matches_name_template.format(self._input_profile_name))
+        # if more than one rows are found (shouldn't be possible) return the profile with
+        # the shortest name
+        else:
+            # if no rows are found, return an error.
+            if filtered.empty:
+                # choose the right template for the returned error.
+                if self._search_type == 'number':
+                    raise LookupError(self._no_matches_template.format(
+                        'profile number',
+                        self._input_profile_number
+                    ))
+                elif self._search_type == 'name':
+                    raise LookupError(self._no_matches_template.format(
+                        'profile name',
+                        self._input_profile_name
+                    ))
+            if self._search_type == 'name':
+                # Get shortest name
+                print('Found {0} profiles matching the supplied profile name.'
+                      .format(filtered.shape[0]))
+                print('Returning profile with shortest name.')
+                filtered =\
+                    filtered.loc[filtered['name'].str.len() == filtered['name'].str.len().min(), :]
+                if filtered.shape[0] > 1:
+                    raise LookupError(self._many_matches_template.format(
+                        'profile name',
+                        self._input_profile_name,
+                        str(filtered.loc[:, ['localId', 'name']])
+                    ))
+                else:
+                    print('Profile name: {0}, profile number: {1}.'.format(filtered['name'],
+                                                                   filtered['localId']))
+                    self.__set_profile_attributes(filtered)
+            elif self._search_type == 'number':
+                raise LookupError(self._many_matches_template.format(
+                    'profile number',
+                    self._input_profile_number,
+                    str(filtered.loc[:, ['localId', 'name']])
+                ))
 
-    def _search(self, search_type):
+    def _search(self):
         res = self.__request_results()
         self.__validate_search_results(res)
         filtered = self.__filter_results(res)
