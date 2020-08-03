@@ -265,7 +265,7 @@ class Flight(object):
                     _d.pop('uri_root')
         return d1, d2
 
-    def __add_subtree(self, parent, exclude_tree=[], treetype='fieldtree'):
+    def __add_subtree(self, parent, exclude_tree=[], treetype='fieldtree', exclude_subtrees=False):
         print("On " + parent['name'] + "(" + parent['nodetype'] + ")" + "...")
         if treetype == "dbtree":
             searchtype = 'database'
@@ -280,12 +280,15 @@ class Flight(object):
             print("-- Added %d %s%s" % (len(d1), searchtype, plural))
 
         for x in d2:
-            self._trees[treetype] = self._trees[treetype].append(x, ignore_index=True)
-            if len(exclude_tree) > 0:
-                if all([y not in x['name'] for y in exclude_tree]):
-                    self.__add_subtree(x, exclude_tree, treetype)
+            if exclude_subtrees:
+                print("-- Excluded subtree: %s" % x['name'])
             else:
-                self.__add_subtree(x, exclude_tree, treetype)
+                self._trees[treetype] = self._trees[treetype].append(x, ignore_index=True)
+                if len(exclude_tree) > 0:
+                    if all([y not in x['name'] for y in exclude_tree]):
+                        self.__add_subtree(x, exclude_tree, treetype)
+                else:
+                    self.__add_subtree(x, exclude_tree, treetype)
 
     def __get_children(self, parent_id, treetype='fieldtree'):
         tr = self._trees[treetype]
@@ -294,7 +297,7 @@ class Flight(object):
             return tr[tr.parent_id.isin(parent_id)]
         return tr[tr.parent_id == parent_id]
 
-    def __remove_subtree(self, parent, treetype = 'fieldtree'):
+    def __remove_subtree(self, parent, treetype='fieldtree'):
         tr = self._trees[treetype]
         chld = tr[tr.parent_id == parent['id']]
 
@@ -379,13 +382,15 @@ class Flight(object):
         -----------------
         treetype: str
             "fieldtree" or "dbtree"
-
         exclude_tree: list
             Exact name strings (case sensitive) of the field groups you don't want to search through
             Ex. ['Profiles', 'Weather Information']
+        exclude_subtrees: bool
+            whether to exclude all subtrees or not
         """
         treetype = kwargs.get("treetype", "fieldtree")
         exclude_tree = kwargs.get("exclude_tree", [])
+        exclude_subtrees = kwargs.get("exclude_subtrees", False)
         searchtype = "field" if treetype == "fieldtree" else "database"
 
         if treetype not in ("fieldtree", "dbtree"):
@@ -419,7 +424,12 @@ class Flight(object):
         print("=== Starting to update subtree from '%s (%s)' ==="
               % (parent['name'], parent['nodetype']))
         self.__remove_subtree(parent, treetype=treetype)
-        self.__add_subtree(parent, exclude_tree, treetype=treetype)
+        self.__add_subtree(
+            parent,
+            exclude_tree,
+            treetype=treetype,
+            exclude_subtrees=exclude_subtrees
+        )
 
     def make_default_tree(self):
         """

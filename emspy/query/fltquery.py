@@ -582,13 +582,18 @@ class FltQuery(Query):
         -----------------
         exclude_tree: list
             trees to exclude from database tree
+        exclude_subtrees: bool
+            excludes all subtrees if set to True
 
         Returns
         -------
         None
         """
         exclude_tree = kwargs.get("exclude_tree", [])
-        self.__flight.update_tree(*args, **{"treetype": "fieldtree", "exclude_tree": exclude_tree})
+        exclude_subtrees = kwargs.get("exclude_subtrees", False)
+        self.__flight.update_tree(*args, **{"treetype": "fieldtree",
+                                            "exclude_tree": exclude_tree,
+                                            "exclude_subtrees": exclude_subtrees})
 
     def generate_preset_fieldtree(self):
         """
