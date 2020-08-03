@@ -60,7 +60,10 @@ class Connection(object):
         # We assign the uri root to a member variable up front, and use that everywhere to
         # simplify. In order to use an alternate uri root, it must be specified in the constructor.
         if server_url is not None:
-            self._uri_root = server_url
+            if server_url.endswith('/api'):
+                self._uri_root = server_url
+            else:
+                self._uri_root = server_url.rstrip('/') + '/api'
         else:
             self._uri_root = common.uri_root[server]
 
