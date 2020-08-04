@@ -18,7 +18,7 @@ class FltQuery(Query):
     """
     Flight query class
     """
-    def __init__(self, conn, ems_name, data_file=LocalData.default_data_file):
+    def __init__(self, conn, ems_name=None, data_file=LocalData.default_data_file):
         """
         Flight query initialization
 
