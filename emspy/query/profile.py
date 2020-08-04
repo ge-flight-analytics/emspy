@@ -112,22 +112,96 @@ class Profile(Query):
                   "different arguments.")
             return
 
-    def get_profile_results(self, flight_id):
-        raise NotImplementedError
-        # if self._guid is not None:
-        #     resp_h, dict_data = self._conn.request(
-        #         uri_keys=('profile', 'profile_results'),
-        #         uri_args=(self._ems_id, flight_id, self._guid)
-        #     )
-        #     # TODO: Implement some sort of parsing of resulting data.  Honestly, it's not super
-        #     #       useful unless paired with some supplementary information. There are no names.
-        #     #       No descriptions. Perhaps I could combine this information with the information
-        #     #       obtained in the "glossary" and create a meaningful output. Glossary, however,
-        #     #       does not contain the names and ID's of events. Maybe those will have to be
-        #     #       grabbed using the other API endpoints.
-        # else:
-        #     print("")
-        #     return
+    def __query_profile_results(self, flight_id):
+        if self._guid is not None:
+            _, dict_data = self._conn.request(
+                uri_keys=('profile', 'profile_results'),
+                uri_args=(self._ems_id, flight_id, self._guid)
+            )
+            return dict_data
+
+    def get_measurements(self, flight_id):
+        """
+        Get default event measurements for selected flight
+
+        Parameters
+        ----------
+        flight_id: int
+            flight record identifier
+
+        Returns
+        -------
+        measurements: pd.DataFrame
+            event default measurements for selected flight
+        """
+        profile_results = self.__query_profile_results(flight_id)
+        measurements = pd.DataFrame(profile_results['measurements']).sort_values('itemId')
+        glossary = self.__filter_glossary('measurement', 'default')
+        measurements['name'] = measurements['itemId'].map(glossary['name'].to_dict())
+        return measurements
+
+    def get_timepoints(self, flight_id):
+        """
+        Get default event timepoints for selected flight
+
+        Parameters
+        ----------
+        flight_id: int
+            flight record identifier
+
+        Returns
+        -------
+        measurements: pd.DataFrame
+            event default timepoints for selected flight
+        """
+        profile_results = self.__query_profile_results(flight_id)
+        timepoints = pd.DataFrame(profile_results['timepoints']).sort_values('itemId')
+        glossary = self.__filter_glossary('timepoint', 'default')
+        timepoints['name'] = timepoints['itemId'].map(glossary['name'].to_dict())
+        return timepoints
+
+    def get_events(self, flight_id, field_type='measurements'):
+        """
+        Get event information for selected flight
+
+        Parameters
+        ----------
+        flight_id: int
+            flight record identifier
+        field_type: str
+            field to extract:
+                measurements: global event measurements
+                timepoints: global event timepoints
+
+        Returns
+        -------
+        event_data: pd.DataFrame
+            selected event field for selected flight
+        """
+        profile_results = self.__query_profile_results(flight_id)
+        events = pd.DataFrame(profile_results['events']).sort_values('itemId')
+        if field_type == 'measurements':
+            record_type = 'measurement'
+            event_field = 'globalMeasurements'
+        elif field_type == 'timepoints':
+            record_type = 'timepoint'
+            event_field = 'globalTimepoints'
+        glossary = self.__filter_glossary(record_type, 'eventGlobal')
+        event_data = events.iloc[:, :8]\
+            .join(events[event_field].apply(pd.Series))\
+            .melt(id_vars=events.columns[:8])\
+            .drop('variable', axis=1)
+        event_data = event_data.drop('value', axis=1)\
+            .join(event_data['value'].apply(pd.Series))
+        event_data['name'] = \
+            event_data['itemId'].map(glossary['name'].to_dict())
+        return event_data
+
+    def __filter_glossary(self, record_type, scope):
+        glossary = self._glossary.loc[(self._glossary['recordType'] == record_type), :]
+        glossary = glossary.loc[(self._glossary['scope'] == scope), :]
+        glossary = glossary.set_index('itemId')
+        return glossary
 
     def __set_profile_attributes(self, profile_data):
         if isinstance(profile_data, pd.DataFrame):

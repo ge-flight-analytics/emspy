@@ -169,7 +169,7 @@ class FltQuery(Query):
             'order': order,
             'aggregate': 'none'})
 
-    def filter(self, expr):
+    def filter(self, expr, operator='and'):
         """
         Translate the give filtering conditions to json queries.
 
@@ -177,13 +177,17 @@ class FltQuery(Query):
         ----------
         expr: str
             filtering expression
+        operator: str
+            specifies how to aggregate filters:
+                and: all filter conditions must be met
+                or: any filter condition must be met
 
         Returns
         -------
         None
         """
         if 'filter' not in self.__queryset:
-            self.__queryset['filter'] = dict(operator='and', args=[])
+            self.__queryset['filter'] = dict(operator=operator, args=[])
         expr_vec = self.__split_expr(expr)
         jsonobj = self.__translate_expr(expr_vec)
         self.__queryset['filter']['args'].append(jsonobj)
