@@ -57,5 +57,10 @@ uris = {
         'glossary': '/v2/ems-systems/%s/profiles/%s/glossary',  # (emsSystemId, profileId)
         'events': '/v2/ems-systems/%s/profiles/%s/events',  # (emsSystemId, profileId)
         'single_event': '/v2/ems-systems/%s/profiles/%s/events/%s',  # (emsSystemId, profileId, eventId)
+    },
+    'analyticSet': {
+        'analytic_set_groups': '/v2/ems-systems/%s/analytic-set-groups',  # (emsSystemId),
+        'analytic_set_group': '/v2/ems-systems/%s/analytic-set-groups/%s',  # (emsSystemId, groupId)
+        'analytic_set': '/v2/ems-systems/%s/analytic-set-groups/%s/analytic-sets/%s',  # (emsSystemId, groupId, analyticSetName)
     }
 }

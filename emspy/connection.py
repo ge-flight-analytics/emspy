@@ -240,7 +240,7 @@ class Connection(object):
             if exc_type is urllib.error.HTTPError:
                 message_bytes = exc_value.read()
                 message_str = message_bytes.decode('utf-8')
-                exc_value.msg = exc_value.msg + '\n Details: ' + message_str
+                print(exc_value.msg + '\n Details: ' + message_str)
                 raise
 
             print("Trying to reconnect the EMS API.")
