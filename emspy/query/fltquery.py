@@ -129,6 +129,28 @@ class FltQuery(Query):
             self.__queryset['select'].append(d)
             self.__columns.append(field)
 
+    def deselect(self, *args):
+        """
+        Removes fields from the query
+
+        Parameters
+        ----------
+        args:
+            fields to remove
+
+        Returns
+        -------
+        None
+        """
+        fields = self.__flight.search_fields(*args)
+        if not isinstance(fields, list):
+            fields = [fields]
+        for field in fields:
+            matching_entries = [d for d in self.__queryset['select'] if d['fieldId'] == field['id']]
+            for entry in matching_entries:
+                self.__queryset['select'].remove(entry)
+            self.__columns.remove(field)
+
     def group_by(self, *args):
         """
         Functionally equivalent to SQL's groupby
@@ -191,6 +213,28 @@ class FltQuery(Query):
         expr_vec = self.__split_expr(expr)
         jsonobj = self.__translate_expr(expr_vec)
         self.__queryset['filter']['args'].append(jsonobj)
+
+    def remove_filter(self, expr):
+        """
+        Removes a filter from the queryset
+
+        Parameters
+        ----------
+        expr: str
+            filtering expression
+
+        Returns
+        -------
+        None
+        """
+        if 'filter' in self.__queryset:
+            expr_vec = self.__split_expr(expr)
+            jsonobj = self.__translate_expr(expr_vec)
+            # Remove the filter from the arguments
+            self.__queryset['filter']['args'].remove(jsonobj)
+            # If no filters are left remove the filter key from the queryset
+            if len(self.__queryset['filter']['args']) == 0:
+                self.__queryset.remove('filter')
 
     @staticmethod
     def __split_expr(expr):
