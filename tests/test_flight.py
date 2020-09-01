@@ -12,6 +12,5 @@ def test_get_shortest_field():
         'name': {29: 'Airframe', 30: 'Airframe Engine Series'},
         'parent_id': {29: '[-hub-][field-group][[[ems-core][entity-type][foqa-flights]][[ems-core][internal-field-group][aircraft-info]]]', 30: '[-hub-][field-group][[[ems-core][entity-type][foqa-flights]][[ems-core][internal-field-group][aircraft-info]]]'}}
     airframe_fields_dataframe = pd.DataFrame.from_dict(airframe_fields_dict)
-    airframe_field = flight.get_shortest(airframe_fields_dataframe)
+    airframe_field = flight._get_shortest(airframe_fields_dataframe)
     assert(airframe_field['name'] == "Airframe")
-    

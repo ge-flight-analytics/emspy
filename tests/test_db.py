@@ -1,6 +1,5 @@
 import os
 import sqlite3
-import contextlib
 from mock_query import MockFilterQuery
 import pytest
 
@@ -61,7 +60,8 @@ def create_tmpDB(legacy=False):
             INSERT INTO kvmaps(ems_id, id, key, value) 
             VALUES(
                 1,
-                '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[airframe-engine-field-set][base-field][engine-series-2]]]',
+                '[-hub-][field][[[ems-core][entity-type][foqa-flights]]
+                [[airframe-engine-field-set][base-field][engine-series-2]]]',
                 0,
                 'Unknown'
             );
@@ -92,7 +92,8 @@ def create_tmpDB(legacy=False):
             INSERT INTO kvmaps(ems_id, id, key, value) 
             VALUES(
                 3,
-                '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[airframe-engine-field-set][base-field][engine-series-2]]]',
+                '[-hub-][field][[[ems-core][entity-type][foqa-flights]]
+                [[airframe-engine-field-set][base-field][engine-series-2]]]',
                 0,
                 'Unknown'
             );
@@ -147,7 +148,8 @@ def create_tmpDB(legacy=False):
             VALUES(
                 'https://ems.efoqa.com/api',
                 1,
-                '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[airframe-engine-field-set][base-field][engine-series-2]]]',
+                '[-hub-][field][[[ems-core][entity-type][foqa-flights]]
+                [[airframe-engine-field-set][base-field][engine-series-2]]]',
                 0,
                 'Unknown'
             );
@@ -182,7 +184,8 @@ def create_tmpDB(legacy=False):
             VALUES(
                 'https://fas.efoqa.com/api',
                 1,
-                '[-hub-][field][[[ems-core][entity-type][foqa-flights]][[airframe-engine-field-set][base-field][engine-series-2]]]',
+                '[-hub-][field][[[ems-core][entity-type][foqa-flights]]
+                [[airframe-engine-field-set][base-field][engine-series-2]]]',
                 0,
                 'Unknown'
             );

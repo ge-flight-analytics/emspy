@@ -13,10 +13,10 @@ else:
 @patch('emspy.query.query.EMS', MockEMS)
 @patch('emspy.Connection', MockConnection)
 def test_all_df_rows_exist_in_create_columns_without_schema_map():
-    sys = 'ems24-app'
-    c = MockConnection(user='', pwd='')
+    ems_system = 'ems24-app'
+    connection = MockConnection(user='', pwd='')
     entity_id = 'foo'
-    i_query = InsertQuery(c, sys, entity_id)
+    i_query = InsertQuery(connection, ems_system, entity_id)
 
     dummy_df = pd.DataFrame({'A': [1, 2, 3], 'B': ['a', 'b', 'c'], 'C': [4, 5, 6]})
     i_query.insert_df(dummy_df)
@@ -37,13 +37,14 @@ def test_all_df_rows_exist_in_create_columns_without_schema_map():
             j = j + 1
         i = i + 1
 
+
 @patch('emspy.query.query.EMS', MockEMS)
 @patch('emspy.Connection', MockConnection)
 def test_all_create_columns_exist_in_df_without_schema_map():
-    sys = 'ems24-app'
-    c = MockConnection(user='', pwd='')
+    ems_system = 'ems24-app'
+    connection = MockConnection(user='', pwd='')
     entity_id = 'foo'
-    i_query = InsertQuery(c, sys, entity_id)
+    i_query = InsertQuery(connection, ems_system, entity_id)
 
     dummy_df = pd.DataFrame({'A': [1, 2, 3], 'B': ['a', 'b', 'c'], 'C': [4, 5, 6]})
     i_query.insert_df(dummy_df)
@@ -53,7 +54,7 @@ def test_all_create_columns_exist_in_df_without_schema_map():
     # Rows should have been added in order.
     i = 0
     for row in create_columns:
-        row_df = dummy_df.iloc[i,] # create_column row # should correspond to dataframe row #
+        row_df = dummy_df.iloc[i, :]  # create_column row # should correspond to dataframe row #
         j = 0
         for item in row:
             fieldId = item['fieldId']
@@ -62,13 +63,14 @@ def test_all_create_columns_exist_in_df_without_schema_map():
             j = j + 1
         i = i + 1
 
+
 @patch('emspy.query.query.EMS', MockEMS)
 @patch('emspy.Connection', MockConnection)
 def test_all_df_rows_exist_in_create_columns_with_schema_map():
-    sys = 'ems24-app'
-    c = MockConnection(user='', pwd='')
+    ems_system = 'ems24-app'
+    connection = MockConnection(user='', pwd='')
     entity_id = 'foo'
-    i_query = InsertQuery(c, sys, entity_id)
+    i_query = InsertQuery(connection, ems_system, entity_id)
 
     dummy_df = pd.DataFrame({'A': [1, 2, 3], 'B': ['a', 'b', 'c'], 'C': [4, 5, 6]})
     schema_map = {'A': '[-hub][A]', 'B': '[-hub][B]', 'C': '[-hub][C]'}
@@ -91,13 +93,14 @@ def test_all_df_rows_exist_in_create_columns_with_schema_map():
             j = j + 1
         i = i + 1
 
+
 @patch('emspy.query.query.EMS', MockEMS)
 @patch('emspy.Connection', MockConnection)
 def test_all_create_columns_exist_in_df_with_schema_map():
-    sys = 'ems24-app'
-    c = MockConnection(user='', pwd='')
+    ems_system = 'ems24-app'
+    connection = MockConnection(user='', pwd='')
     entity_id = 'foo'
-    i_query = InsertQuery(c, sys, entity_id)
+    i_query = InsertQuery(connection, ems_system, entity_id)
 
     dummy_df = pd.DataFrame({'A': [1, 2, 3], 'B': ['a', 'b', 'c'], 'C': [4, 5, 6]})
     schema_map = {'A': '[-hub][A]', 'B': '[-hub][B]', 'C': '[-hub][C]'}
@@ -109,7 +112,7 @@ def test_all_create_columns_exist_in_df_with_schema_map():
     # Rows should have been added in order.
     i = 0
     for row in create_columns:
-        row_df = dummy_df.iloc[i,] # create_column row # should correspond to dataframe row #
+        row_df = dummy_df.iloc[i, :]  # create_column row # should correspond to dataframe row #
         j = 0
         for item in row:
             fieldId = item['fieldId']
