@@ -160,7 +160,7 @@ class Profile(Query):
         timepoints['name'] = timepoints['itemId'].map(glossary['name'].to_dict())
         return timepoints
 
-    def get_events(self, flight_id, field_type='measurements'):
+    def get_events(self, flight_id, event_specific_fields=False, field_type='measurements'):
         """
         Get event information for selected flight
 
@@ -168,6 +168,8 @@ class Profile(Query):
         ----------
         flight_id: int
             flight record identifier
+        event_specific_fields: bool
+            specifies whether or not to include event-specific timepoints or measurements
         field_type: str
             field to extract:
                 measurements: global event measurements
@@ -179,25 +181,50 @@ class Profile(Query):
             selected event field for selected flight
         """
         profile_results = self.__query_profile_results(flight_id)
-        events = pd.DataFrame(profile_results['events']).sort_values('itemId')
-        if field_type == 'measurements':
-            record_type = 'measurement'
-            event_field = 'globalMeasurements'
-        elif field_type == 'timepoints':
-            record_type = 'timepoint'
-            event_field = 'globalTimepoints'
-        glossary = self.__filter_glossary(record_type, 'eventGlobal')
-        event_data = events.iloc[:, :8]\
-            .join(events[event_field].apply(pd.Series))\
-            .melt(id_vars=events.columns[:8])\
-            .drop('variable', axis=1)
-        event_data = event_data.drop('value', axis=1)\
-            .join(event_data['value'].apply(pd.Series))
-        event_data['name'] = \
-            event_data['itemId'].map(glossary['name'].to_dict())
+        events = pd.DataFrame(profile_results['events'])
+
+        if event_specific_fields:
+            # If the user wants event-specific fields, we need to perform some additional manipulation to format those
+            # correctly
+
+            # Which kind of event-specific fields does the user want to pull?
+            if field_type == 'measurements':
+                record_type = 'measurement'
+                event_field = 'globalMeasurements'
+            elif field_type == 'timepoints':
+                record_type = 'timepoint'
+                event_field = 'globalTimepoints'
+
+            # Filter the glossary for eventGlobal items.
+            glossary = self.__filter_glossary(record_type, 'eventGlobal')
+
+            # Columns that don't come back as arrays (and instead have simple values)
+            simple_columns = ['recordNumber', 'eventType', 'phaseOfFlight', 'severity', 'status', 'falsePositive',
+                              'startTime', 'endTime']
+
+            # Pull out simple values immediately
+            # Also attach event_field (either globalMeasurement or globalTimepoint) ids and values
+            event_data = events.loc[:, simple_columns]\
+                .join(events[event_field].apply(pd.Series))\
+                .melt(id_vars=simple_columns)\
+                .drop('variable', axis=1)
+            # Pull out itemId and dataValue from the value column as their own columns.
+            event_data = event_data.drop('value', axis=1)\
+                .join(event_data['value'].apply(pd.Series))
+            # Convert itemId to a string based on this profile's glossary
+            event_data['name'] = \
+                event_data['itemId'].map(glossary['name'].to_dict())
+        else:
+            # If the user doesn't want to pull event-specific timepoints or measurements, we can return the dataframe
+            # directly
+            event_data = events
+
         return event_data
 
     def __filter_glossary(self, record_type, scope):
+        # Retrieve the profile glossary if it has not already been loaded.
+        if self._glossary is None:
+            self.get_glossary()
         glossary = self._glossary.loc[(self._glossary['recordType'] == record_type), :]
         glossary = glossary.loc[(self._glossary['scope'] == scope), :]
         glossary = glossary.set_index('itemId')
