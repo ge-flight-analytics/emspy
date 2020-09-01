@@ -185,9 +185,9 @@ class Profile(Query):
 
         if event_specific_fields:
             # If the user wants event-specific fields, we need to perform some additional manipulation to format those
-            # correctly
+            # correctly.
 
-            # Which kind of event-specific fields does the user want to pull?
+            # Which kind of event-specific fields does the user want to pull (if applicable)?
             if field_type == 'measurements':
                 record_type = 'measurement'
                 event_field = 'globalMeasurements'
@@ -198,12 +198,12 @@ class Profile(Query):
             # Filter the glossary for eventGlobal items.
             glossary = self.__filter_glossary(record_type, 'eventGlobal')
 
-            # Columns that don't come back as arrays (and instead have simple values)
+            # Columns that don't come back as arrays (and instead have simple values).
             simple_columns = ['recordNumber', 'eventType', 'phaseOfFlight', 'severity', 'status', 'falsePositive',
                               'startTime', 'endTime']
 
-            # Pull out simple values immediately
-            # Also attach event_field (either globalMeasurement or globalTimepoint) ids and values
+            # Pull out simple values immediately.
+            # Also attach event_field (either globalMeasurement or globalTimepoint) ids and values.
             event_data = events.loc[:, simple_columns]\
                 .join(events[event_field].apply(pd.Series))\
                 .melt(id_vars=simple_columns)\
@@ -211,13 +211,24 @@ class Profile(Query):
             # Pull out itemId and dataValue from the value column as their own columns.
             event_data = event_data.drop('value', axis=1)\
                 .join(event_data['value'].apply(pd.Series))
-            # Convert itemId to a string based on this profile's glossary
-            event_data['name'] = \
+            # Convert itemId to a string based on this profile's glossary.
+            event_data['itemName'] = \
                 event_data['itemId'].map(glossary['name'].to_dict())
+            # Include the type of the item (so that itemName, itemId, and dataValue have some context).
+            event_data['itemType'] = record_type
         else:
-            # If the user doesn't want to pull event-specific timepoints or measurements, we can return the dataframe
-            # directly
+            # If the user doesn't want to pull event-specific timepoints or measurements, we can return the DataFrame
+            # directly.
             event_data = events
+
+        # Grab event names and ID's from the glossary.
+        event_name_details = self.__filter_glossary('event', 'eventSpecific')[['eventTypeId', 'name']]\
+            .astype({'eventTypeId': int})\
+            .rename(columns={'name': 'eventName'})
+        # Merge in the event names so the user has something human-readable to work with.
+        event_data = event_data\
+            .merge(event_name_details, how='left', left_on='eventType', right_on='eventTypeId')\
+            .drop(columns='eventTypeId')
 
         return event_data
 
