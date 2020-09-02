@@ -160,7 +160,7 @@ class Profile(Query):
         timepoints['name'] = timepoints['itemId'].map(glossary['name'].to_dict())
         return timepoints
 
-    def get_events(self, flight_id, field_type='measurements'):
+    def get_events(self, flight_id):
         """
         Get event information for selected flight
 
@@ -168,10 +168,6 @@ class Profile(Query):
         ----------
         flight_id: int
             flight record identifier
-        field_type: str
-            field to extract:
-                measurements: global event measurements
-                timepoints: global event timepoints
 
         Returns
         -------
@@ -179,25 +175,23 @@ class Profile(Query):
             selected event field for selected flight
         """
         profile_results = self.__query_profile_results(flight_id)
-        events = pd.DataFrame(profile_results['events']).sort_values('itemId')
-        if field_type == 'measurements':
-            record_type = 'measurement'
-            event_field = 'globalMeasurements'
-        elif field_type == 'timepoints':
-            record_type = 'timepoint'
-            event_field = 'globalTimepoints'
-        glossary = self.__filter_glossary(record_type, 'eventGlobal')
-        event_data = events.iloc[:, :8]\
-            .join(events[event_field].apply(pd.Series))\
-            .melt(id_vars=events.columns[:8])\
-            .drop('variable', axis=1)
-        event_data = event_data.drop('value', axis=1)\
-            .join(event_data['value'].apply(pd.Series))
-        event_data['name'] = \
-            event_data['itemId'].map(glossary['name'].to_dict())
+        events = pd.DataFrame(profile_results['events'])
+
+        # Grab event names and ID's from the glossary.
+        event_name_details = self.__filter_glossary('event', 'eventSpecific')[['eventTypeId', 'name']]\
+            .astype({'eventTypeId': int})\
+            .rename(columns={'name': 'eventName'})
+        # Merge in the event names so the user has something human-readable to work with.
+        event_data = events\
+            .merge(event_name_details, how='left', left_on='eventType', right_on='eventTypeId')\
+            .drop(columns='eventTypeId')
+
         return event_data
 
     def __filter_glossary(self, record_type, scope):
+        # Retrieve the profile glossary if it has not already been loaded.
+        if self._glossary is None:
+            self.get_glossary()
         glossary = self._glossary.loc[(self._glossary['recordType'] == record_type), :]
         glossary = glossary.loc[(self._glossary['scope'] == scope), :]
         glossary = glossary.set_index('itemId')
