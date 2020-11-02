@@ -557,7 +557,7 @@ class FltQuery(Query):
                 elif ctype == 'boolean':
                     df.iloc[:, i] = df.iloc[:, i].astype(bool)
                 elif ctype == 'dateTime':
-                    df.iloc[:, i] = pd.to_datetime(df.iloc[:, i]).dt.tz_convert('UTC')
+                    df.iloc[:, i] = pd.to_datetime(df.iloc[:, i], utc=True)
             except ValueError:
                 print("Somethings wrong when converting to Pandas DataFrame for column '%s' "
                       "(type: %s)." % (cname, ctype))
