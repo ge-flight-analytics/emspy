@@ -155,3 +155,61 @@ class Analytic(object):
 			return df.iloc[0, :].to_dict()
 		# When unique = False
 		return df.to_dict('records')
+
+	def get_physical_parameter_list(self, flight_id):
+		"""
+		Retrieves the physical parameters available for a certain `flight_id`
+
+		Parameters
+		----------
+		flight_id: int
+			Flight ID to pull physical parameters for.
+
+		Returns
+		-------
+		pd.DataFrame
+			A Pandas DataFrame with the columns: `id`, `name`, `description`, `units`
+		"""
+
+		_, content = self._conn.request(
+			uri_keys=('analytic', 'group_f'),
+			uri_args=(self._ems_id, flight_id),
+			body={"analyticGroupId": "RG.RawParameters"}
+		)
+
+		content_analytics = content['analytics']
+		df = pd.DataFrame(content_analytics)
+
+		return df
+
+	def get_flight_analytic_metadata(self, analytic_id, flight_id):
+		"""
+		Retrieves the analytic metadata in the context of a flight. This is especially useful when you are querying
+		physical parameters, which only make sense in the context of a given flight (as opposed to globally).
+
+		Parameters
+		----------
+		analytic_id: str
+			Analytic ID to pull metadata for.
+		flight_id: str
+			Example Flight ID to pull metadata for.
+
+		Returns
+		-------
+		dict
+			A dict with fields returned by the API.
+		"""
+
+		_, content = self._conn.request(
+			uri_keys=('analytic', 'metadata'),
+			uri_args=(self._ems_id, flight_id),
+			jsondata={"id": analytic_id}
+		)
+
+		api_return_values = content['values']
+
+		# Values are returned as {"key": "key_name", "value": "value_name"}, so we can simply unpack those into a more
+		# user-friendly dictionary.
+		return_dict = {item['key']: item['value'] for item in api_return_values}
+
+		return return_dict
