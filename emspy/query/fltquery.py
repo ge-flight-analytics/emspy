@@ -369,6 +369,21 @@ class FltQuery(Query):
     #         y = "none"
     #     self.__queryset['format'] = y
 
+    def from_json_string(self, json_str):
+        """
+        Load the JSON string for this query.
+
+        Parameters
+        ----------
+        json_str: str
+            Queryset as a JSON str.
+        """
+
+        if type(json_str) is not str:
+            raise Type(f'json_str should be a str. Found: {type(json_str)}')
+
+        self.__queryset = json.loads(json_str)
+
     def in_json(self):
         """
         Dump the queryset as JSON
