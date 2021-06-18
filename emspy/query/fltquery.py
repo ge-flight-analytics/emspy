@@ -380,7 +380,7 @@ class FltQuery(Query):
         """
 
         if type(json_str) is not str:
-            raise Type(f'json_str should be a str. Found: {type(json_str)}')
+            raise TypeError('json_str should be a str. Found: {0}'.format(type(json_str)))
 
         self.__queryset = json.loads(json_str)
 
