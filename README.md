@@ -354,3 +354,44 @@ In case you just want to query for a single flight, `run(...)` function will be 
 res_dat = tsq.run(1901112, start=0, end=900)
 ```
 This function will return a Pandas DataFrame that contains timepoints from 0 to 900 secs and corresponding values for selected parameters. You can also pass a timestep as an optional argument. Default timestep is set 1.0 sec.
+
+### Querying Analytics
+
+You can retrieve a list of physical parameters for a flight by utilizing methods in the Analytic class. 
+
+First, instantiate an analytic_query object with your connection (`c`) and a system id (`1`):
+
+```python
+analytic_query = Analytic(c, 1)
+```
+
+Then, call `analytic_query.get_physical_parameter_list(fr)` with a valid Flight Record:
+
+```python
+physicals = analytic_query.get_physical_parameter_list(flight_id = flight_id)
+```
+
+`physicals.sample(3)` looks like:
+
+|     | id                                                                                                                                                                                                                                                                                                                                                                       | name                      | description                               | units   |
+|----:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------|:------------------------------------------|:--------|
+| 277 | foobar123 | PARAMETER 1    | Uid: P1\nName: PARAMETER 1.    | DEG     |
+| 696 | foobar124 | PARAMETER 2 | Uid: P2\nName: PARAMETER 2. | YR      |
+|  48 | foobar125 | PARAMETER 3           | Uid: P3\nName: PARAMETER 3.           | DEG     |
+
+You can also retrieve analytic metadata for a Flight (including for physical parameters):
+
+```python
+analytic_id = physicals['id'].iloc[0]
+metadata = analytic_query.get_flight_analytic_metadata(analytic_id=analytic_id, flight_id=flight_id)
+```
+
+`metadata` looks like:
+
+```json
+{
+    'Display\\Leading Zero': True,
+    'Parameter\\Name': Foo
+}
+```
+

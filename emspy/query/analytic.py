@@ -185,7 +185,9 @@ class Analytic(object):
 	def get_flight_analytic_metadata(self, analytic_id, flight_id):
 		"""
 		Retrieves the analytic metadata in the context of a flight. This is especially useful when you are querying
-		physical parameters, which only make sense in the context of a given flight (as opposed to globally).
+		physical parameters, which only make sense in the context of a given flight (as opposed to globally). There
+		will be one key:value pair for every piece of metadata returned by the API. Keys could vary depending on the
+		type of analytic.
 
 		Parameters
 		----------
@@ -197,7 +199,8 @@ class Analytic(object):
 		Returns
 		-------
 		dict
-			A dict with fields returned by the API.
+			A dict with metadata fields returned by the API. There will be one key:value pair for every piece of
+			metadata returned by the API. Keys could vary depending on the type of analytic.
 		"""
 
 		_, content = self._conn.request(
