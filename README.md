@@ -388,10 +388,9 @@ metadata = analytic_query.get_flight_analytic_metadata(analytic_id=analytic_id, 
 
 `metadata` looks like:
 
-```json
+```python
 {
     'Display\\Leading Zero': True,
     'Parameter\\Name': Foo
 }
 ```
-
