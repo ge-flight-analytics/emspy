@@ -176,7 +176,7 @@ class TSeriesQuery(Query):
             self.__columns.append(prm)
             self.__analytic._save_paramtable()
 
-    def select(self, *args):
+    def select(self, force_search=False, *args):
         """
         A method for selecting parameters to query for by name. This method searches for parameters
         by name and adds them to the current query.
@@ -193,8 +193,11 @@ class TSeriesQuery(Query):
         save_table = False
 
         for kw in keywords:
-            # Get the param from param table
-            prm = self.__analytic.get_param(kw)
+            if not force_search:
+                # Get the param from param table
+                prm = self.__analytic.get_param(kw)
+            else:
+                prm = dict(ems_id="", id="", name="", description="", units="")
             if prm['id'] == "":
                 # If the param's not found, call EMS API
                 res_df = self.__analytic.search_param(kw, in_df=True)
