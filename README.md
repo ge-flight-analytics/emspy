@@ -355,6 +355,16 @@ res_dat = tsq.run(1901112, start=0, end=900)
 ```
 This function will return a Pandas DataFrame that contains timepoints from 0 to 900 secs and corresponding values for selected parameters. You can also pass a timestep as an optional argument. Default timestep is set 1.0 sec.
 
+### Ignoring Local Cache
+When running a Time-Series query, emapy create a local cache of found parameters to be re-used on later calls. Sometimes this can cause the wrong parameter to be selected if a parameter with a similar name to the one you want is already in the cache. to force emspy to search for parameters from ems every time and ignore the cache, you can add the force_search=True option in the select() method like this
+```python
+tsq.select(
+  "baro-corrected altitude", 
+  "airspeed (calibrated; 1 or only)", 
+  "ground speed (best avail)",
+  force_search=True)
+```
+
 ### Querying Analytics
 
 You can retrieve a list of physical parameters for a flight by utilizing methods in the Analytic class. 
