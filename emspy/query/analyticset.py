@@ -32,15 +32,49 @@ class AnalyticSet(Asset):
         """
         Asset.__init__(self, conn, "AnalyticSet")
         self._ems_id = ems_id
+        self._analytic_set = {}
         self._analytic_sets = []
         self._analytics = []
         self.exclude_trees = exclude_trees
         self.exclude_patterns = exclude_patterns
         if len(self.exclude_patterns) > 0:
             self.exclude_patterns = [re.compile(pattern) for pattern in self.exclude_patterns]
-        self.update_list()
+        #self.update_list()
 
-    def __get_analytic_set_group(self, groupId):
+    def __parse_analytic_set(self):
+        analytics = self._analytic_set['items']
+        for idx, analytic in enumerate(analytics):
+            for key, value in analytic['analytic'].items():
+                analytics[idx][key] = value
+            del analytics[idx]['analytic']
+        return analytics
+
+    def get_analytic_set(self, analytic_set_name, group_path=['root']):
+        if len(group_path) == 0:
+            group_path=['root']
+        if (len(group_path) == 1) and ((group_path[0].lower() == 'root') or (group_path[0].lower() == 'parameter sets')):
+            group_id = 'root'
+        else:
+            if (group_path[0].lower() == 'root') or (group_path[0].lower() == 'parameter sets'):
+                del group_path[0]
+            group_id = ":".join(group_path)
+        
+        _, dict_data = self._conn.request(
+            uri_keys=('analyticSet', 'analytic_set'),
+            uri_args=(self._ems_id, group_id, analytic_set_name)
+        )
+        self._analytic_set = dict_data
+
+        list_of_entries = self.__parse_analytic_set()
+        data_df = pd.DataFrame.from_records(list_of_entries)
+
+        analytics_df = pd.DataFrame(columns=['id', 'name', 'description', 'units', 'metadata','chartIndex', 'chartSize', 'customName', 'color', 'customRange', 'customDigitsAfterDecimal', 'lineWidth', 'displaySampleMarker', 'sampleMarkerShape', 'lineStyle', 'parameterFilteringMode', 'interpolationMode'])
+
+        analytics_df = pd.concat([data_df,analytics_df])
+        return analytics_df
+
+
+    def __get_analytic_set_group(self, groupId, recurse=True):
         if groupId in self.exclude_trees:
             print('-- Excluding analytic set group {0}'.format(groupId))
             return
@@ -55,8 +89,10 @@ class AnalyticSet(Asset):
                 uri_args=(self._ems_id, groupId)
             )
             self._analytic_sets.append(dict_data)
-            for group in dict_data['groups']:
-                self.__get_analytic_set_group(group['groupId'])
+            if recurse:
+                for group in dict_data['groups']:
+                    self.__get_analytic_set_group(group['groupId'])
+    
         except urllib.error.HTTPError:
             print('-- Failed to fetch analytic set group {0}'.format(groupId))
 
@@ -68,7 +104,7 @@ class AnalyticSet(Asset):
         -------
         None
         """
-        self.__get_analytic_set_group('Root')
+        self.__get_analytic_set_group('Root', recurse=False)
         self._analytic_sets = pd.DataFrame(self._analytic_sets)
         self._analytic_sets = self._analytic_sets.drop(['groups', 'sets'], axis=1)\
             .join(self._analytic_sets['sets'].apply(pd.Series))\
