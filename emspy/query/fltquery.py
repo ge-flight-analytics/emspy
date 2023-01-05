@@ -495,7 +495,7 @@ class FltQuery(Query):
             if ctr == 0:
                 df = dff
             else:
-                df = df.append(dff, ignore_index=True)
+                df = df.concat(dff, axis=0, join='outer', ignore_index=True)
 
             print("Received up to %d rows." % df.shape[0])
             if dff.shape[0] < n_row:

@@ -275,7 +275,7 @@ class Flight(object):
             d1, d2 = self.__fl_request(parent)
 
         if len(d1) > 0:
-            self._trees[treetype] = self._trees[treetype].append(d1, ignore_index=True)
+            self._trees[treetype] = self._trees[treetype].concat(d1, axis=0, join='outer', ignore_index=True)
             plural = "s" if len(d1) > 1 else ""
             print("-- Added %d %s%s" % (len(d1), searchtype, plural))
 
@@ -283,7 +283,7 @@ class Flight(object):
             if exclude_subtrees:
                 print("-- Excluded subtree: %s" % x['name'])
             else:
-                self._trees[treetype] = self._trees[treetype].append(x, ignore_index=True)
+                self._trees[treetype] = self._trees[treetype].concat(x, axis=0, join='outer',  ignore_index=True)
                 if len(exclude_tree) > 0:
                     if all([y not in x['name'] for y in exclude_tree]):
                         self.__add_subtree(x, exclude_tree, treetype)
@@ -344,7 +344,7 @@ class Flight(object):
                                        & (tree.parent_id == parent['id']))]
 
         if len(d1) > 0:
-            self._trees[treetype] = self._trees[treetype].append(d1, ignore_index=True)
+            self._trees[treetype] = self._trees[treetype].concat(d1, axis=0, join='outer', ignore_index=True)
             plural = "s" if len(d1) > 1 else ""
             print("-- Added %d %s%s" % (len(d1), searchtype, plural))
 
@@ -522,7 +522,7 @@ class Flight(object):
                 if unique:
                     # If more than one value returned, choose one with the shortest name.
                     fres = _get_shortest(fres)
-            res = res.append(fres, ignore_index=True)
+            res = res.concat(fres, axis=0, join='outer', ignore_index=True)
 
         # Convert the search result to a list of dicts
         res = [x[1].to_dict() for x in res.iterrows()]
