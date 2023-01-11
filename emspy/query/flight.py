@@ -581,7 +581,7 @@ class Flight(object):
                 'value': list(km.values())
             })
             kmap['key'] = pd.to_numeric(kmap['key'])
-            self._trees['kvmaps'] = self._trees['kvmaps'].append(kmap, ignore_index=True)
+            self._trees['kvmaps'] = self._trees['kvmaps'].concat(kmap, axis=0, join='outer', ignore_index=True, sort=True)
             self.__save_kvmaps()
 
         if in_dict:
