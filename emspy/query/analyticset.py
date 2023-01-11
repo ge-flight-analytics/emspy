@@ -1,6 +1,9 @@
 from __future__ import absolute_import
-from future import standard_library
-standard_library.install_aliases()
+
+import sys
+if sys.version_info < (3, 0):
+    from future import standard_library
+    standard_library.install_aliases()
 
 import re
 import urllib.error

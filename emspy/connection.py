@@ -1,15 +1,17 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
-from future import standard_library
-standard_library.install_aliases()
+
+import sys
+if sys.version_info < (3, 0):
+    from future import standard_library
+    standard_library.install_aliases()
 
 from builtins import object
 import gzip
 import io
 import json
 import ssl
-import sys
 import urllib.error
 import urllib.parse
 import urllib.request
