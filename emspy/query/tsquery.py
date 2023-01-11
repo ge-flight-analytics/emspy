@@ -213,7 +213,7 @@ class TSeriesQuery(Query):
                 prm = res_df.iloc[0, :].to_dict()
                 # Add the new parameters to the param table for later uses
                 self.__analytic._param_table = \
-                    self.__analytic._param_table.concat(res_df, axis=0, join='outer', ,ignore_index=True, sort=True)
+                    self.__analytic._param_table.concat(res_df, axis=0, join='outer', ignore_index=True, sort=True)
                 save_table = True
 
             # Put the param into JSON query string
