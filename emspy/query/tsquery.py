@@ -168,7 +168,7 @@ class TSeriesQuery(Query):
             df = pd.DataFrame(prm, index=[0])
 
             self.__analytic._param_table = \
-                self.__analytic._param_table.append(df, ignore_index=True, sort=True)
+                pd.concat([self.__analytic._param_table, df], axis=0, join='outer', ignore_index=True, sort=True)
 
             # Put the param into JSON query string
             self.__queryset['select'].append({'analyticId': prm['id']})
@@ -213,7 +213,7 @@ class TSeriesQuery(Query):
                 prm = res_df.iloc[0, :].to_dict()
                 # Add the new parameters to the param table for later uses
                 self.__analytic._param_table = \
-                    self.__analytic._param_table.append(res_df, ignore_index=True, sort=True)
+                    pd.concat([self.__analytic._param_table, res_df], axis=0, join='outer', ignore_index=True, sort=True)
                 save_table = True
 
             # Put the param into JSON query string
@@ -423,7 +423,7 @@ class TSeriesQuery(Query):
             res_df = self.__analytic.search_param("hours of data (hours)", in_df=True)
             p = res_df.iloc[0].to_dict()
             self.__analytic._param_table = \
-                self.__analytic._param_table.append(res_df, ignore_index=True, sort=True)
+                pd.concat([self.__analytic._param_table, res_df], axis=0, join='outer', ignore_index=True, sort=True)
             self.__analytic._save_paramtable()
         q = {
             "select": [{"analyticId": p["id"]}],
