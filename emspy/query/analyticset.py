@@ -71,8 +71,10 @@ class AnalyticSet(Asset):
             # Remove empty items from list
             path_list = [i for i in path_list if i]
 
-            if (path_list[0].lower() == 'parameter sets') or (path_list[0].lower() == 'root'):
-                path_list.pop(0)
+            # In case the path starts with "root" or "parameter sets"
+            if len(path_list) > 0:
+                if (path_list[0].lower() == 'parameter sets') or (path_list[0].lower() == 'root'):
+                    path_list.pop(0)
 
             if len(path_list) == 0:
                 self._group_id = 'root'
@@ -93,8 +95,9 @@ class AnalyticSet(Asset):
         -------
         DataFrame
         """
+ 
         if not analytic_set_path:
-            raise ValueError("No Analytic Set path was passed in")
+            raise ValueError('No Analytic Set path was passed in. To access the root folder use "\<set name>" or "root\<set name>"')
         self._analytic_set_path = analytic_set_path
         self.__parse_path()
         
@@ -112,7 +115,7 @@ class AnalyticSet(Asset):
 
             analytic_set_df = pd.DataFrame(columns=AnalyticSet.__analytic_set_columns)
 
-            analytic_set_df = pd.concat([data_df, analytic_set_df])
+            analytic_set_df = pd.concat([analytic_set_df, data_df])
             return analytic_set_df
         except:
             print(f'-- Failed to fetch analytic set "{self._analytic_set_path}"')
