@@ -4,6 +4,7 @@ standard_library.install_aliases()
 
 from .asset import Asset
 import pandas as pd
+import re
 
 
 class AnalyticSet(Asset):
@@ -59,7 +60,8 @@ class AnalyticSet(Asset):
             for key,value in ref_dict.items():
                 self._analytic_set_path = self._analytic_set_path.replace(key, value)
 
-            path_list = self._analytic_set_path.split('\\')
+            # Split on both \ and /
+            path_list = re.split(r'[\\,/]', self._analytic_set_path)
             if not path_only:
                 self._analytic_set_id = path_list.pop()
                 # In case the path ended with "\"
@@ -80,7 +82,7 @@ class AnalyticSet(Asset):
 
     def get_analytic_set(self, analytic_set_path):
         """
-        Gets analytic the data for the analytic set in the analytic_set_path
+        Retrieves the data for the analytic set in the analytic_set_path
 
         Parameters
         ----------
@@ -110,7 +112,7 @@ class AnalyticSet(Asset):
 
             analytic_set_df = pd.DataFrame(columns=AnalyticSet.__analytic_set_columns)
 
-            analytic_set_df = pd.concat([data_df,analytic_set_df])
+            analytic_set_df = pd.concat([data_df, analytic_set_df])
             return analytic_set_df
         except:
             print(f'-- Failed to fetch analytic set "{self._analytic_set_path}"')

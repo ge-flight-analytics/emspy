@@ -366,7 +366,7 @@ tsq.select(
 ```
 
 ### Loading Analytics from a Parameter Set
-If you want to load all Analytics from a paramerter set, you can use the `select_from_pset()` method. This will load ALL parametes in the set in the same order that they are in the EMS parameter set. This method requires one input: the path to the parameter set, including the name of the set itself. Folders in the path need to be separated usuing a backslash ("\\"). To find the path to the parameter set, look at the "Load" menu in FDV+
+If you want to load all Analytics from a parameters set, you can use the `select_from_pset()` method. This will load ALL parametes in the set in the same order that they are in the EMS parameter set. This method requires one input: the path to the parameter set, including the name of the set itself. Folders in the path need to be separated usuing a backslash ("\\"). To find the path to the parameter set, look at the "Load" menu in FDV+
 
 ```python
 tsq.select_from_pset('folder1\folder2\set name')
@@ -421,7 +421,7 @@ Make sure you import the AnalyticSet class like this
 ```python
 from emspy.query import AnalyticSet
 ```
-Next, instantiate a analytic_set bobject using a connection (c) and a system_is (1)
+Next, instantiate an analytic_set object using a connection (c) and a system_id (1)
 ```python
 from emspy.query import AnalyticSet
 analytic_set = AnalyticSet(c,1)
@@ -431,7 +431,7 @@ Finally use the `get_analytic_set()` method to get info for the set of interest.
 analytic_set_df = analytic_set.get_analytic_set('folder1\folder2\set name')
 ```
 
-If you want to know what folders and sets are inside a folder, you can use the `get_group_content()` method. This takes just the path to the folder yuu are interested in as the only input.
+If you want to know what folders and sets are inside a folder, you can use the `get_group_content()` method. This takes just the path to the folder you are interested in as the only input.
 To search the root folder, do not pass an input or use an empty string ("")
 ```python
 analytic_set.get_group_content("folder1\folder2")
