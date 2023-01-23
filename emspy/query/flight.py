@@ -525,7 +525,7 @@ class Flight(object):
 
             # Make sure we have a dataframe if fres is a dict (it is in some cases)
             if isinstance(fres, pd.DataFrame) is False:
-                fres = pd.DataFrame.from_dict(fres)
+                fres = pd.DataFrame.from_dict(fres, index=[0])
 
             res = pd.concat([res, fres], axis=0, join='outer', ignore_index=True)
 
