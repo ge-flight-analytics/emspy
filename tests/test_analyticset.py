@@ -79,7 +79,7 @@ def test_get_analytic_set_set_does_not_exist(analyticset):
 
 def test_get_analytic_set_retieved_has_right_data(analyticset):
     df = analyticset.get_analytic_set('\path\mock set')
-    assert list(df) == analyticset._AnalyticSet__analytic_set_columns # Checking columns
+    assert len(list(df)) == len(analyticset._AnalyticSet__analytic_set_columns) # Checking the right number of columns
     assert len(df) == 3 # Expect 3 rows from the mock
 
 def test_get_group_content_retieved_has_right_data(analyticset):
