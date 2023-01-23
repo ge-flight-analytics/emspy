@@ -11,3 +11,4 @@ __pycache__
 .vscode
 test-output.xml
 test.db
+tmpDB.db

@@ -122,6 +122,9 @@ def test_select_from_pset_has_correct_ids(tsq):
     for column in columns:
         assert column['name'] in expected_analytic_names
 
+    # destroy
+    tsq._TSeriesQuery__analytic._metadata.delete_all_tables()
+
 
 # INCORRECT ID TESTS
 def test_analytic_id_doesnt_exist_with_lookup_using_select_ids(tsq):

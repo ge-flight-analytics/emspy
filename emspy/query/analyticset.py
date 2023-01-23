@@ -101,7 +101,7 @@ class AnalyticSet(Asset):
         self._analytic_set_path = analytic_set_path
         self.__parse_path()
         
-        print(f'-- Fetching analytic set "{self._analytic_set_path}"')
+        print('-- Fetching analytic set "%s"' % self._analytic_set_path)
         try:
             _, dict_data = self._conn.request(
                 uri_keys=('analyticSet', 'analytic_set'),
@@ -118,7 +118,7 @@ class AnalyticSet(Asset):
             analytic_set_df = pd.concat([analytic_set_df, data_df])
             return analytic_set_df
         except:
-            print(f'-- Failed to fetch analytic set "{self._analytic_set_path}"')
+            print('-- Failed to fetch analytic set "%s"' % self._analytic_set_path)
 
 
     def get_group_content(self, analytic_group_path=None):
@@ -162,7 +162,7 @@ class AnalyticSet(Asset):
         
     
     def __get_analytic_set_group(self):
-        print(f'-- Fetching info for analytic set group {self._group_id}')
+        print('-- Fetching info for analytic set group %s' % self._group_id)
         _, dict_data = self._conn.request(
             uri_keys=('analyticSet', 'analytic_set_group'),
             uri_args=(self._ems_id, self._group_id)
