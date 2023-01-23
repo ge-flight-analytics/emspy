@@ -13,7 +13,7 @@ import numpy as np
 
 from emspy.query import *
 from .query import Query
-
+from .analyticset import AnalyticSet
 
 class TSeriesQuery(Query):
     """
@@ -224,6 +224,32 @@ class TSeriesQuery(Query):
             self.__columns.append(prm)
         if save_table:
             self.__analytic._save_paramtable()
+
+    def select_from_pset(self, analytic_set_path):
+        """
+        A method for selecting parameters to query from a parameter set
+
+        Parameters
+        ----------
+        analytics_set_name: str
+            set name
+        group_path: list of str
+            the path (folders) to the location of the analytic set
+
+        Returns
+        -------
+        None
+        """
+        # Get the Analytics from the parameter set  using the get_analytic_set() method
+        # from the AnalyticSet Class
+        pset = AnalyticSet(self._conn, self._ems_id)
+        pset_df = pset.get_analytic_set(analytic_set_path)
+        for analytic in pset_df.to_dict(orient='records'):
+            # Adding analytic ids to the query body
+            self.__queryset['select'].append({'analyticId': analytic['id']})
+            # Adding to the columns for iteration over the results
+            self.__columns.append(analytic)
+        
 
     def range(self, start=None, end=None):
         """

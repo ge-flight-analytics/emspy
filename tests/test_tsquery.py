@@ -111,6 +111,21 @@ def test_analytic_id_with_lookup_using_select_ids_adds_name(tsq):
     tsq._TSeriesQuery__analytic._metadata.delete_all_tables()
 
 
+def test_select_from_pset_has_correct_ids(tsq):
+    expected_analytic_ids = ['fake-pres-alt-id-that-exists=','fake-rad-alt-id-that-exists=','fake-gear_height-id-that-exists=']
+    expected_analytic_names = ['Pressure Altitude (ft)','Radio Altitude (1, left, Capt or Only) (ft)','Best Estimate of Main Gear Height AGL (ft)']
+    tsq.select_from_pset('\path\set')
+    selects = tsq._TSeriesQuery__queryset['select']
+    columns = tsq._TSeriesQuery__columns
+    for id in selects:
+        assert id['analyticId'] in expected_analytic_ids
+    for column in columns:
+        assert column['name'] in expected_analytic_names
+
+    # destroy
+    tsq._TSeriesQuery__analytic._metadata.delete_all_tables()
+
+
 # INCORRECT ID TESTS
 def test_analytic_id_doesnt_exist_with_lookup_using_select_ids(tsq):
     analytic_id = 'fake-pressure-alt-id-that-DOES-NOT-exist='

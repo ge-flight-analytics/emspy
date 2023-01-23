@@ -22,6 +22,7 @@ class MockConnection(Connection):
     """
     Object for connection to EMS API
     """
+
     def __init__(self, user, pwd):
         super(MockConnection, self).__init__(user=user, pwd=pwd)
 
@@ -402,6 +403,118 @@ class MockConnection(Connection):
                     'description': 'N) Parking'
                 }
             ]
+        elif uri_keys == ('analyticSet', 'analytic_set'):
+            ems_id, group_id, analytic_set_id = uri_args
+            if analytic_set_id == 'A PARAMETER SET THAT DOES NOT EXIST':
+                content = {
+                    "message": "Invalid Analytic Set",
+                    "messageDetail": "Unable to find an analytic set with the name {analytic_set_id} in group {group_id}".format(analytic_set_id=analytic_set_id, group_id=group_id),
+                    "unexpected": False
+                }
+            else:
+                content = {
+                    "name": analytic_set_id,
+                    "description": "mock parameter set description",
+                    "items": [
+                        {
+                            "chartIndex": 0,
+                            "analytic": {
+                                "id": "fake-pres-alt-id-that-exists=",
+                                "name": "Pressure Altitude (ft)",
+                                "description": "Altitude derived from static air pressure.  A value of zero should always correspond to static air pressure = 29.92 inches of mercury.",
+                                "units": "ft",
+                                "metadata": None
+                            },
+                            "color": "#000000"
+                        },
+                        {
+                            "chartIndex": 1,
+                            "analytic": {
+                                "id": "fake-rad-alt-id-that-exists=",
+                                "name": "Radio Altitude (1, left, Capt or Only) (ft)",
+                                "description": "This is the recorded radio altitude value (in feet) of the 'primary' radio altimeter.  Preferably the 'first' or 'left' but also the 'captain' or only available recorded altimeter.",
+                                "units": "ft",
+                                "metadata": None
+                            },
+                            "color": "#000000"
+                        },
+                        {
+                            "chartIndex": 1,
+                            "analytic": {
+                                "id": "fake-gear_height-id-that-exists=",
+                                "name": "Best Estimate of Main Gear Height AGL (ft)",
+                                "description": "This is the best estimate of the height above ground level of the main gear.  If available, it will use the pitch, altimeter height and geometry constants to compute this height.  If these are not available, it will use the recorded/biased radar altimeter value as an estimate.",
+                                "units": "ft",
+                                "metadata": None
+                            },
+                            "color": "#0000FF"
+                        }
+                    ]
+                }
+        elif uri_keys == ('analyticSet', 'analytic_set_group'):
+            ems_id, group_id = uri_args
+            if group_id == 'root':
+                content = {
+                    "name": "Misc",
+                    "groupId": "Root",
+                    "groups": [
+                        {
+                            "name": "Mock Folder 1",
+                            "groupId": "Mock Folder 1",
+                            "groups": [],
+                            "sets": [],
+                            "collections": []
+                        },
+                        {
+                            "name": "Mock Folder 2",
+                            "groupId": "Mock Folder 2",
+                            "groups": [],
+                            "sets": [],
+                            "collections": []
+                        }
+                    ],
+                    "sets": [
+                        {
+                            "name": "Mock root parameter set 1"
+                        },
+                        {
+                            "name": "Mock root parameter set 2"
+                        }
+                    ],
+                    "collections": []
+                }
+            else:
+                content = {
+                    "name": group_id,
+                    "groupId": group_id,
+                    "groups": [
+                        {
+                            "name": "Mock Folder 1",
+                            "groupId": "{}:Mock Folder 1".format(group_id),
+                            "groups": [],
+                            "sets": [],
+                            "collections": []
+                        },
+                        {
+                            "name": "Mock Folder 2",
+                            "groupId": "{}:Mock Folder 2".format(group_id),
+                            "groups": [],
+                            "sets": [],
+                            "collections": []
+                        }
+                    ],
+                    "sets": [
+                        {
+                            "name": "Mock parameter set 1"
+                        },
+                        {
+                            "name": "Mock parameter set 2"
+                        }
+                    ],
+                    "collections": []
+                }
+
+
         return RESPONSE_HEADERS, content
 
 

@@ -10,4 +10,5 @@ from emspy.query.fltquery import FltQuery
 from emspy.query.tsquery import TSeriesQuery
 from emspy.query.profile import Profile
 from emspy.query.dbmodify import InsertQuery
+from emspy.query.analyticset import AnalyticSet
 
