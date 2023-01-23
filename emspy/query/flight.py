@@ -522,6 +522,11 @@ class Flight(object):
                 if unique:
                     # If more than one value returned, choose one with the shortest name.
                     fres = _get_shortest(fres)
+
+            # Make sure we have a dataframe if fres is a dict (it is in some cases)
+            if isinstance(fres, pd.DataFrame) is False:
+                fres = pd.DataFrame(fres, index=[0])
+
             res = pd.concat([res, fres], axis=0, join='outer', ignore_index=True)
 
         # Convert the search result to a list of dicts
