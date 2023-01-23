@@ -405,7 +405,7 @@ class MockConnection(Connection):
             if analytic_set_id == 'A PARAMETER SET THAT DOES NOT EXIST':
                 content = {
                     "message": "Invalid Analytic Set",
-                    "messageDetail": f"Unable to find an analytic set with the name {analytic_set_id} in group {group_id}",
+                    "messageDetail": "Unable to find an analytic set with the name {analytic_set_id} in group {group_id}".format(analytic_set_id=analytic_set_id, group_id=group_id),
                     "unexpected": False
                 }
             else:
@@ -487,14 +487,14 @@ class MockConnection(Connection):
                     "groups": [
                         {
                             "name": "Mock Folder 1",
-                            "groupId": f"{group_id}:Mock Folder 1",
+                            "groupId": "{}:Mock Folder 1".format(group_id),
                             "groups": [],
                             "sets": [],
                             "collections": []
                         },
                         {
                             "name": "Mock Folder 2",
-                            "groupId": f"{group_id}:Mock Folder 2",
+                            "groupId": "{}:Mock Folder 2".format(group_id),
                             "groups": [],
                             "sets": [],
                             "collections": []
