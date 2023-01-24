@@ -344,6 +344,9 @@ class Flight(object):
                                        & (tree.parent_id == parent['id']))]
 
         if len(d1) > 0:
+            # Make sure we have a dataframe if d1 is a list (it is in some cases)
+            if isinstance(d1, pd.DataFrame) is False:
+                d1 = pd.DataFrame(d1)
             self._trees[treetype] = pd.concat([self._trees[treetype], d1], axis=0, join='outer', ignore_index=True)
             plural = "s" if len(d1) > 1 else ""
             print("-- Added %d %s%s" % (len(d1), searchtype, plural))
@@ -633,6 +636,7 @@ class Flight(object):
 def _get_shortest(fields):
     if isinstance(fields, pd.DataFrame) is False:
         sys.exit("Input should be a Pandas dataframe.")
+    fields.reset_index(inplace=True)
     return fields.loc[fields.name.str.len().idxmin()].to_dict()
 
 
