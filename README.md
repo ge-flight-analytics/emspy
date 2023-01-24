@@ -105,6 +105,16 @@ The `update_fieldtree(...)` above queries the meta-data of all measurements loca
 
 **Caution**: the process of adding a subtree usually requires a very large number of recursive RESTful API calls which take quite a long time. Please try to specify the subtree to as low level as possible to avoid a long processing time.
 
+By default, the `update_fieldtree(...)` method will load ALL subfolders of the last item in the path. If there are a lot of subfolders, this can take a long time and is likely not necessary. the keyword arguments `exclude_subtrees` and `exclude_tree` can be used to prevent all or some of the subtreed to be loaded. To exlude all subtrees set the `exclude_subtrees=FALSE`
+```python
+query.update_fieldtree("profiles", "standard", "block-cost", "p301",
+                       "measured", "ground operations (before takeoff)", exclude_subtrees=FALSE)
+```
+To only exclude a list of subtrees use `exclude_tree=[...]`
+```python
+query.update_fieldtree('Flight Information', exclude_tree=['Processing', 'FlightPulse'])
+```
+
 As you may noticed in the example codes, you can specify a data entity by the string fraction of its full name. The "key words" of the entity name follows this rule:
 * Case insensitive
 * Keyword can be a single word or multiple consecutive words that are found in the full name string
@@ -130,7 +140,12 @@ query.select("flight date",
              "takeoff airport iata code")
 ```
 
-The passed data fields must be part of the data fields in your data tree. 
+The passed data fields must be part of the data fields in your data tree.
+
+To avoid name collisions, it is also possible to pass a tuple into the `select()` method with the full path to the field of interest. All but the last elements will represent a folder in the path, and the last element is the field itself. For example, if you want to select the "Takeoff Airport Code" field in the "Navigation Information\Takeoff\Airport" folder. your select statement would look like this
+```python
+query.select( ('Navigation Information', 'Takeoff', 'Airport', 'Takeoff Airport Code') )
+```
 
 You need to make a separate select call if you want to add a field with aggregation applied.
 
