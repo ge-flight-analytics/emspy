@@ -365,8 +365,9 @@ class Flight(object):
 
         add_id = _listdiff(new_ones, old_ones)
         if len(add_id) > 0:
-            self._trees[treetype] =\
-                pd.concat([pd.DataFrame.from_dict([x]) for x in d2 if x['id'] in add_id])
+            if isinstance(d2, pd.DataFrame) is False:
+                d2 = pd.DataFrame(d2)
+            self._trees[treetype] = pd.concat([self._trees[treetype], d2], axis=0, join='outer', ignore_index=True)
 
     def update_tree(self, *args, **kwargs):
         """
