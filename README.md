@@ -26,8 +26,8 @@ Alternatively, the package can be installed from the git repository or a zip pac
 The optional proxy setting can be passed to the EMS connection object with the following format:
 ```python
 proxies = {
-    'http': 'http://{prxy_usrname}:{prxy_password}@{proxy_server_address}:{port}',
-    'https': 'https://{prxy_usrname}:{prxy_password}@{proxy_server_address}:{port}'
+    'http': 'http://{proxy_server_address}:{port}',
+    'https': 'https://{proxy_server_address}:{port}'
 }
 ```
 
@@ -44,12 +44,12 @@ With optional `server` argument, you can select one of the currently available E
 * "beta" 
 * "nightly"
 
-For servers hosted locally or in Azure, the server_url argument should be used instead of the server argument. This argument should be of the format "<server address>/api". For example, if the server hosting the API is http://abc-api.us.efoqa.com, then the connection object would look like this
+For servers hosted locally or in Azure, the server_url argument should be used instead of the server argument. This argument should be of the format "<server address>/api". For example, if the server hosting the API is https://abc-api.us.efoqa.com, then the connection object would look like this
 
 ```python
 from emspy import Connection
 
-c = Connection("usrname", "password", proxies=proxies, server_url="http://abc-api.us.efoqa.com/api")
+c = Connection("usrname", "password", proxies=proxies, server_url="https://abc-api.us.efoqa.com/api")
 
 ```
 
@@ -74,7 +74,7 @@ The FDW Flights database is one of the frequently used databases. In order to se
 query.set_database("fdw flights")
 ```
 
-In EMS system, all databases & data fields are organized in hierarchical tree structures. In order to use a database that is not the FDW Flights, you need to tell the query object where in the EMS DB tree your database is at. You can explore the EMS database tree from [EMS Online](http://fas.efoqa.com/Docs/Rest/Demos/DataSources). The following example specifies the location of one of the Event databases in the DB tree and then set the Event database that you want to use:
+In EMS system, all databases & data fields are organized in hierarchical tree structures. In order to use a database that is not the FDW Flights, you need to tell the query object where in the EMS DB tree your database is at. You can explore the EMS database tree from [EMS Online](https://fas.efoqa.com/Docs/Rest/Demos/DataSources). The following example specifies the location of one of the Event databases in the DB tree and then set the Event database that you want to use:
 
 ```python
 query.update_dbtree("fdw", "events", "standard", "p0")
