@@ -210,6 +210,12 @@ class TSeriesQuery(Query):
             if prm['id'] == "":
                 # If the param's not found, call EMS API
                 res_df = self.__analytic.search_param(kw, in_df=True)
+                # If they exist, drop both the 'Path' and 'displayPath' as they are list elements.
+                # We don't believe they get used down stream so easier to drop.
+                if 'path' in res_df.columns:
+                    res_df = res_df.drop('path', axis = 1)
+                if 'displayPath' in res_df.columns:
+                    res_df = res_df.drop('displayPath', axis = 1)
                 res_df['ems_id'] = self._ems_id
                 # The first one is with the shortest name string. Pick that.
                 prm = res_df.iloc[0, :].to_dict()
