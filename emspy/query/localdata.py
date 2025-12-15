@@ -92,8 +92,10 @@ class LocalData(object):
 		----------
 		table_name: str
 			table to query
-		condition: str
+		condition: str or tuple
 			filtering condition (WHERE clause)
+			Can be either a string (deprecated, backward compatible) or
+			a tuple of (where_clause, params) for parameterized queries
 
 		Returns
 		-------
@@ -102,10 +104,19 @@ class LocalData(object):
 		"""
 		if (self.__dbfile is not None) and self.table_exists(table_name):
 			query = "SELECT * FROM %s" % table_name
+			params = None
+
 			if condition is not None:
-				query = query + " WHERE %s" % condition
+				if isinstance(condition, tuple):
+					# New secure format: (where_clause, params)
+					where_clause, params = condition
+					query = query + " WHERE %s" % where_clause
+				else:
+					# Old format: direct string (backward compatible)
+					query = query + " WHERE %s" % condition
+
 			query = query + ";"
-			df = pd.read_sql_query(query, self._conn)
+			df = pd.read_sql_query(query, self._conn, params=params)
 
 			# Strange columns appear. Get only the actual columns
 			return df[[col for col in LocalData.table_info[table_name] if col in df]]
@@ -119,8 +130,10 @@ class LocalData(object):
 		----------
 		table_name: str
 			table to drop or to remove records from
-		condition: str
+		condition: str or tuple
 			removal condition (WHERE clause), if set to None (default) the table is dropped instead
+			Can be either a string (deprecated, backward compatible) or
+			a tuple of (where_clause, params) for parameterized queries
 
 		Returns
 		-------
@@ -130,7 +143,14 @@ class LocalData(object):
 			if condition is None:
 				self._conn.execute("DROP TABLE %s" % table_name)
 			else:
-				self._conn.execute("DELETE FROM %s WHERE %s;" % (table_name, condition))
+				if isinstance(condition, tuple):
+					# New secure format: (where_clause, params)
+					where_clause, params = condition
+					query = "DELETE FROM %s WHERE %s;" % (table_name, where_clause)
+					self._conn.execute(query, params)
+				else:
+					# Old format: direct string (backward compatible)
+					self._conn.execute("DELETE FROM %s WHERE %s;" % (table_name, condition))
 			self._conn.commit()
 
 	def delete_all_tables(self):

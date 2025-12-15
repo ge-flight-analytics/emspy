@@ -233,3 +233,146 @@ def test_legacyDB_kvmaps():
     query = MockFilterQuery('Engine Series', 'tmpDB.db')
     kvmaps = query._FltQuery__flight._Flight__get_kvmaps()
     assert_tree(query, kvmaps, legacy=True)
+
+
+def test_sql_injection_single_quote():
+    """Test that database IDs with single quotes don't cause SQL injection"""
+    sql = """
+        BEGIN TRANSACTION;
+        CREATE TABLE fieldtree (
+            uri_root TEXT,
+            ems_id INTEGER,
+            db_id TEXT,
+            id TEXT,
+            nodetype TEXT,
+            type TEXT,
+            name TEXT,
+            parent_id TEXT
+        );
+        INSERT INTO fieldtree(uri_root, ems_id, db_id, id, nodetype, type, name, parent_id)
+        VALUES(
+            'https://ems.efoqa.com/api',
+            1,
+            'test-db-id',
+            'field-1',
+            'field',
+            'number',
+            'Normal Field',
+            NULL
+        );
+        INSERT INTO fieldtree(uri_root, ems_id, db_id, id, nodetype, type, name, parent_id)
+        VALUES(
+            'https://ems.efoqa.com/api',
+            1,
+            'GPWS: Don''t Sink',
+            'field-2',
+            'field',
+            'number',
+            'GPWS Field',
+            NULL
+        );
+        COMMIT;
+    """
+    with sqlite3.connect('tmpDB.db') as conn:
+        cursor = conn.cursor()
+        cursor.executescript(sql)
+
+    # Import LocalData to test directly
+    from emspy.query import LocalData
+    ld = LocalData('tmpDB.db')
+
+    # Test 1: Normal database ID (should work)
+    result1 = ld.get_data("fieldtree", ("ems_id = ? and db_id = ?", (1, 'test-db-id')))
+    assert len(result1) == 1
+    assert result1.iloc[0]['name'] == 'Normal Field'
+
+    # Test 2: Database ID with single quote (the original issue - should work now)
+    result2 = ld.get_data("fieldtree", ("ems_id = ? and db_id = ?", (1, "GPWS: Don't Sink")))
+    assert len(result2) == 1
+    assert result2.iloc[0]['name'] == 'GPWS Field'
+
+    # Test 3: SQL injection attempt - should return no results, not error
+    result3 = ld.get_data("fieldtree", ("ems_id = ? and db_id = ?", (1, "' OR '1'='1")))
+    assert len(result3) == 0  # Should not return all rows
+
+    # Test 4: Verify total row count hasn't changed (data integrity)
+    all_results = ld.get_data("fieldtree")
+    assert len(all_results) == 2  # Only our 2 test rows
+
+    ld.close()
+
+
+def test_sql_injection_delete():
+    """Test that delete operations with single quotes don't cause SQL injection"""
+    sql = """
+        BEGIN TRANSACTION;
+        CREATE TABLE fieldtree (
+            uri_root TEXT,
+            ems_id INTEGER,
+            db_id TEXT,
+            id TEXT,
+            nodetype TEXT,
+            type TEXT,
+            name TEXT,
+            parent_id TEXT
+        );
+        INSERT INTO fieldtree(uri_root, ems_id, db_id, id, nodetype, type, name, parent_id)
+        VALUES(
+            'https://ems.efoqa.com/api',
+            1,
+            'test-db-1',
+            'field-1',
+            'field',
+            'number',
+            'Field 1',
+            NULL
+        );
+        INSERT INTO fieldtree(uri_root, ems_id, db_id, id, nodetype, type, name, parent_id)
+        VALUES(
+            'https://ems.efoqa.com/api',
+            1,
+            'GPWS: Don''t Sink',
+            'field-2',
+            'field',
+            'number',
+            'Field 2',
+            NULL
+        );
+        INSERT INTO fieldtree(uri_root, ems_id, db_id, id, nodetype, type, name, parent_id)
+        VALUES(
+            'https://ems.efoqa.com/api',
+            1,
+            'test-db-3',
+            'field-3',
+            'field',
+            'number',
+            'Field 3',
+            NULL
+        );
+        COMMIT;
+    """
+    with sqlite3.connect('tmpDB.db') as conn:
+        cursor = conn.cursor()
+        cursor.executescript(sql)
+
+    from emspy.query import LocalData
+    ld = LocalData('tmpDB.db')
+
+    # Test 1: Delete with single quote in db_id
+    ld.delete_data("fieldtree", ("ems_id = ? and db_id = ?", (1, "GPWS: Don't Sink")))
+
+    # Verify only the correct row was deleted
+    remaining = ld.get_data("fieldtree")
+    assert len(remaining) == 2  # Should have 2 rows left
+    assert 'Field 2' not in remaining['name'].values  # Field 2 should be deleted
+    assert 'Field 1' in remaining['name'].values  # Field 1 should remain
+    assert 'Field 3' in remaining['name'].values  # Field 3 should remain
+
+    # Test 2: SQL injection attempt in delete - should not delete anything
+    ld.delete_data("fieldtree", ("ems_id = ? and db_id = ?", (1, "' OR '1'='1")))
+
+    # Verify nothing was deleted
+    still_remaining = ld.get_data("fieldtree")
+    assert len(still_remaining) == 2  # Should still have 2 rows
+
+    ld.close()
