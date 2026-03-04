@@ -191,10 +191,13 @@ def create_tmpDB(legacy=False):
             );
             COMMIT;
         """
-    with sqlite3.connect('tmpDB.db') as conn:
-        cursor = conn.cursor()
-        cursor.executescript(sql)
 
+    conn = sqlite3.connect('tmpDB.db')
+    cursor = conn.cursor()
+    cursor.executescript(sql)
+    conn.commit()
+    cursor.close()
+    conn.close()
 
 def assert_tree(query, tree, legacy=False):
     if legacy:

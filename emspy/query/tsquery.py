@@ -359,10 +359,7 @@ class TSeriesQuery(Query):
                      'Here is the message from API: %s' % (flight, content['message']))
         
         # Put the data in Pandas DataFrame
-        df = pd.DataFrame({"Time (sec)": content['offsets']})
-
-        for i, prm in enumerate(self.__columns):
-            df[prm['name']] = content['results'][i]['values']
+        df = self._api_result_to_df(content)
 
         # "\r\x1b[K" is overwrite print.
         return df
@@ -492,3 +489,26 @@ class TSeriesQuery(Query):
             list: a list describing the current queryset.
         """
         return self.__queryset
+    
+    def _api_result_to_df(self, content):
+        """
+        Takes the raw results from the API and turns them into a dataframe with the appropriate column names.
+
+        Parameters:
+            content: the raw content of the API response
+
+        Returns:
+            pd.DataFrame: a dataframe containing the time series data
+        """
+        # Turn the content into a dictionary
+        content_dict = {}
+        # The 'offset' element in the content should be the first column, which we will call "Time (sec)"
+        content_dict["Time (sec)"] = content.get("offsets")
+
+        # Get the rest of the data into the dictionary
+        for i, prm in enumerate(self.__columns):
+            content_dict[prm['name']] = content['results'][i]['values']
+
+        # Convert the data to a dataframe
+        df = pd.DataFrame(content_dict)
+        return df
