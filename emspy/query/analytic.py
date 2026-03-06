@@ -42,12 +42,12 @@ class Analytic(object):
 			self._metadata.close()
 			self._metadata = LocalData(file_name)
 
-		self._param_table = self._metadata.get_data("params", "ems_id = %d" % self._ems_id)
+		self._param_table = self._metadata.get_data("params", ("ems_id = ?", (self._ems_id,)))
 
 	def _save_paramtable(self):
 		# Save parameter table
 		if len(self._param_table) > 0:
-			self._metadata.delete_data("params", "ems_id = %d" % self._ems_id)
+			self._metadata.delete_data("params", ("ems_id = ?", (self._ems_id,)))
 			self._metadata.append_data("params", self._param_table)
 
 	def get_param_details(self, analytic_id):

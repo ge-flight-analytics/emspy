@@ -111,14 +111,14 @@ class Flight(object):
         else:
             return self._metadata.get_data(
                 "fieldtree",
-                "ems_id = %d and db_id = '%s'" % (self._ems_id, self._db_id)
+                ("ems_id = ? and db_id = ?", (self._ems_id, self._db_id))
             )
 
     def __save_fieldtree(self):
         if len(self._trees['fieldtree']) > 0:
             self._metadata.delete_data(
                 "fieldtree",
-                "ems_id = %d and db_id = '%s'" % (self._ems_id, self._db_id)
+                ("ems_id = ? and db_id = ?", (self._ems_id, self._db_id))
             )
             self._metadata.append_data("fieldtree", self._trees['fieldtree'])
 
@@ -628,10 +628,13 @@ class Flight(object):
         return int(key.values[0])
 
     def __get_filter(self, tree):
-        query_filter = "ems_id = %d" % self._ems_id
-        if 'uri_root' in self._metadata.get_data(tree).columns:
-            query_filter += " AND uri_root = '%s'" % self._uri_root
-        return query_filter
+        # Returns tuple of (where_clause, params) for parameterized queries
+        # Check if uri_root column exists in the actual table by getting empty result
+        table_data = self._metadata.get_data(tree)
+        if 'uri_root' in table_data.columns:
+            return ("ems_id = ? AND uri_root = ?", (self._ems_id, self._uri_root))
+        else:
+            return ("ems_id = ?", (self._ems_id,))
 
 
 def _get_shortest(fields):
