@@ -503,7 +503,7 @@ class TSeriesQuery(Query):
         # Turn the content into a dictionary
         content_dict = {}
         # The 'offset' element in the content should be the first column, which we will call "Time (sec)"
-        content_dict["Time (sec)"] = content.get("offsets")
+        content_dict["Time (sec)"] = content["offsets"]
 
         # Get the rest of the data into the dictionary
         for i, prm in enumerate(self.__columns):

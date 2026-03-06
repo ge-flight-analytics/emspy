@@ -195,7 +195,6 @@ def create_tmpDB(legacy=False):
     conn = sqlite3.connect('tmpDB.db')
     cursor = conn.cursor()
     cursor.executescript(sql)
-    conn.commit()
     cursor.close()
     conn.close()
 
