@@ -114,7 +114,7 @@ def test_analytic_id_with_lookup_using_select_ids_adds_name(tsq):
 def test_select_from_pset_has_correct_ids(tsq):
     expected_analytic_ids = ['fake-pres-alt-id-that-exists=','fake-rad-alt-id-that-exists=','fake-gear_height-id-that-exists=']
     expected_analytic_names = ['Pressure Altitude (ft)','Radio Altitude (1, left, Capt or Only) (ft)','Best Estimate of Main Gear Height AGL (ft)']
-    tsq.select_from_pset('\path\set')
+    tsq.select_from_pset('\\path\\set')
     selects = tsq._TSeriesQuery__queryset['select']
     columns = tsq._TSeriesQuery__columns
     for id in selects:
