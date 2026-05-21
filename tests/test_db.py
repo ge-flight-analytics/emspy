@@ -275,9 +275,13 @@ def test_sql_injection_single_quote():
         );
         COMMIT;
     """
-    with sqlite3.connect('tmpDB.db') as conn:
+    conn = sqlite3.connect('tmpDB.db')
+    try:
         cursor = conn.cursor()
         cursor.executescript(sql)
+        cursor.close()
+    finally:
+        conn.close()
 
     # Import LocalData to test directly
     from emspy.query import LocalData
@@ -353,9 +357,13 @@ def test_sql_injection_delete():
         );
         COMMIT;
     """
-    with sqlite3.connect('tmpDB.db') as conn:
+    conn = sqlite3.connect('tmpDB.db')
+    try:
         cursor = conn.cursor()
         cursor.executescript(sql)
+        cursor.close()
+    finally:
+        conn.close()
 
     from emspy.query import LocalData
     ld = LocalData('tmpDB.db')
