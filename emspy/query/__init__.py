@@ -11,4 +11,5 @@ from emspy.query.tsquery import TSeriesQuery
 from emspy.query.profile import Profile
 from emspy.query.dbmodify import InsertQuery
 from emspy.query.analyticset import AnalyticSet
+from emspy.query.fieldset import Fieldset
 

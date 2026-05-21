@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import json
+import re
 import sys
 from builtins import str
 from builtins import zip
@@ -12,6 +13,21 @@ from future.utils import string_types
 
 from emspy.query import *
 from .query import Query
+from .fieldset import Fieldset
+
+
+# Field IDs embed the source entity-type as a `[ems-...][entity-type][...]`
+# token, which is also the form returned by /database-groups and used as
+# Flight._db_id. This helper extracts that token so a fieldset's fields can
+# be compared against the query's selected database.
+_ENTITY_TYPE_RE = re.compile(r"\[ems-[a-z0-9]+\]\[entity-type\]\[[^\]]+\]")
+
+
+def _extract_field_entity_type(field_id):
+    if not isinstance(field_id, string_types):
+        return None
+    m = _ENTITY_TYPE_RE.search(field_id)
+    return m.group(0) if m else None
 
 
 class FltQuery(Query):
@@ -38,6 +54,7 @@ class FltQuery(Query):
     def _init_assets(self, data_file):
         # Query._init_assets(self)
         self.__flight = Flight(self._conn, self._ems_id, data_file)
+        self.__fieldset = Fieldset(self._conn, self._ems_id)
 
     def set_database(self, name):
         """
@@ -135,6 +152,13 @@ class FltQuery(Query):
         metadata tree search. This is faster and avoids ambiguity when the
         field id is already known.
 
+        Each id that is not already in the local fieldtree cache triggers
+        one ``/ems-systems/<ems_id>/databases/<db_id>/fields/<field_id>``
+        API call via ``Flight.resolve_id`` (the result is cached for the
+        rest of the session). For bulk selection of many uncached ids,
+        consider calling ``update_fieldtree(...)`` first to prime the
+        cache in a single tree walk.
+
         Parameters
         ----------
         args:
@@ -174,27 +198,220 @@ class FltQuery(Query):
             self.__queryset['select'].append(d)
             self.__columns.append(field)
 
-    def deselect(self, *args):
+    def select_fieldset(self, fieldset, group=None):
         """
-        Removes fields from the query
+        Expand a server-curated fieldset into the query's select list.
+
+        Fields are expanded client-side: every field in the fieldset is
+        appended as an individual {fieldId, aggregate} entry with
+        aggregate='none'. The /query endpoint never sees the fieldset
+        reference.
+
+        Aggregation is intentionally not exposed here: applying a single
+        aggregation uniformly across every field in a curated fieldset is
+        rarely sensible, and some aggregations (e.g. stdev on datetime
+        fields) are not processed correctly by the API. To aggregate, add
+        the relevant fields individually via select() or select_id().
+
+        Parameters
+        ----------
+        fieldset: str or dict
+            Either a fieldset name (str) or a pre-fetched fieldset dict
+            returned by Fieldset.get_fieldset. If a name is given without
+            `group`, the fieldset-group tree is walked to find a unique
+            match (name matching is case-insensitive).
+        group: str, optional
+            Fieldset-group ID. Skips the tree walk when `fieldset` is a name.
+
+        Examples
+        --------
+        >>> query.select_fieldset("Standard Flight Metrics")
+        >>> query.select_fieldset("Standard Flight Metrics", group="<group-id>")
+        >>> fs = Fieldset(conn, ems_id).get_fieldset("<group-id>", "Standard Flight Metrics")
+        >>> query.select_fieldset(fs)
+        """
+        fs = self._resolve_fieldset_arg(fieldset, group)
+        fields_df = fs['fields']
+
+        if len(fields_df) == 0:
+            print("-- Warning: fieldset '%s' contains no fields; nothing added."
+                  % fs.get('name', '<unknown>'))
+            return
+
+        self._verify_fieldset_database_match(fs)
+
+        added = 0
+        for _, row in fields_df.iterrows():
+            field_id = row.get('id')
+            if not field_id or (isinstance(field_id, float) and pd.isna(field_id)):
+                print("-- Skipping field '%s' in fieldset '%s': missing field ID."
+                      % (row.get('name'), fs.get('name', '<unknown>')))
+                continue
+            self.__queryset['select'].append({
+                'fieldId': field_id,
+                'aggregate': 'none',
+            })
+            self.__columns.append({
+                'id': field_id,
+                'name': row.get('name') or field_id,
+                'type': row.get('type'),
+            })
+            added += 1
+
+        print("-- Added %d field%s from fieldset '%s'."
+              % (added, 's' if added != 1 else '', fs.get('name', '<unknown>')))
+
+    def _resolve_fieldset_arg(self, fieldset, group):
+        # Pre-fetched fieldset dict.
+        if isinstance(fieldset, dict) and isinstance(fieldset.get('fields'), pd.DataFrame):
+            return fieldset
+
+        if not isinstance(fieldset, string_types):
+            raise TypeError(
+                "fieldset must be a fieldset name (str) or a fieldset dict "
+                "returned by Fieldset.get_fieldset()."
+            )
+
+        if group is not None:
+            return self.__fieldset.get_fieldset(group, fieldset)
+
+        # No group supplied: walk the tree for a unique match.
+        hits = self.__fieldset.find(fieldset)
+        if len(hits) == 0:
+            raise ValueError(
+                "Fieldset '%s' not found in any visible fieldset group. "
+                "List groups with Fieldset.get_groups() and contents with "
+                "Fieldset.get_group(group_id)." % fieldset
+            )
+        if len(hits) > 1:
+            paths = [' > '.join(h['path']) for h in hits]
+            raise ValueError(
+                "Fieldset name '%s' is ambiguous - found in multiple groups:\n  %s\n"
+                "Pass `group` explicitly to disambiguate."
+                % (fieldset, '\n  '.join(paths))
+            )
+        return self.__fieldset.get_fieldset(hits[0]['group_id'], hits[0]['name'])
+
+    def _verify_fieldset_database_match(self, fs):
+        # Skipped silently when no database has been selected yet (the user can
+        # call set_database() later) or when no field IDs carry an extractable
+        # entity-type token (e.g. mock/test field IDs).
+        query_db = self.__flight.get_db_id()
+        if query_db is None:
+            return
+
+        entity_types = []
+        for fid in fs['fields']['id'].tolist():
+            et = _extract_field_entity_type(fid)
+            if et:
+                entity_types.append(et)
+        if not entity_types:
+            return
+
+        unique_types = sorted(set(entity_types))
+        if len(unique_types) > 1:
+            raise ValueError(
+                "Fieldset '%s' mixes fields from multiple databases; cannot "
+                "apply as a single select. Distinct source databases:\n  %s"
+                % (fs.get('name', '<unknown>'), '\n  '.join(unique_types))
+            )
+
+        expected_db = unique_types[0]
+        # Tolerate stray whitespace on user-supplied database IDs (a common
+        # copy/paste hazard). Case and bracket structure remain significant:
+        # entity tokens embed case-sensitive UUID / profile hashes.
+        if query_db.strip() != expected_db.strip():
+            raise ValueError(
+                "Fieldset '%s' targets a different database than this query.\n"
+                "  Query database:    %s\n"
+                "  Fieldset database: %s\n"
+                "Rebuild the query with set_database() on the fieldset's "
+                "database, or pick a fieldset for the current database."
+                % (fs.get('name', '<unknown>'), query_db, expected_db)
+            )
+
+    def deselect(self, *args, **kwargs):
+        """
+        Remove fields from the current selection.
+
+        For each argument, match against the currently-selected fields:
+        first by exact field id, then by case-insensitive substring against
+        the selected field name. No fieldtree lookup is involved, so this
+        works uniformly for fields added via ``select()``, ``select_id()``,
+        or ``select_fieldset()``.
+
+        When a substring matches more than one selected field, by default
+        only the single shortest-named match is removed (preserving the
+        pre-0.7 ``unique=True`` ``search_fields`` semantics). Pass
+        ``all_matches=True`` to remove every matching field.
+
+        Raises ``ValueError`` if no field matches.
 
         Parameters
         ----------
         args:
-            fields to remove
+            Field ids (exact) or substrings of selected field names.
+
+        Keyword arguments
+        -----------------
+        all_matches: bool
+            If True, remove every selected field whose name contains the
+            substring. Default False (remove only the shortest-named match).
 
         Returns
         -------
         None
         """
-        fields = self.__flight.search_fields(*args)
-        if not isinstance(fields, list):
-            fields = [fields]
-        for field in fields:
-            matching_entries = [d for d in self.__queryset['select'] if d['fieldId'] == field['id']]
-            for entry in matching_entries:
-                self.__queryset['select'].remove(entry)
-            self.__columns = [c for c in self.__columns if c['id'] != field['id']]
+        all_matches = kwargs.pop('all_matches', False)
+        if kwargs:
+            raise TypeError(
+                "deselect() got unexpected keyword arguments: %s"
+                % list(kwargs.keys())
+            )
+
+        for arg in args:
+            # Pass 1: exact id match (unambiguous).
+            matched = [c for c in self.__columns if c.get('id') == arg]
+
+            # Pass 2: case-insensitive substring match on the column name.
+            if not matched and isinstance(arg, string_types):
+                arg_lower = arg.lower()
+                matched = [
+                    c for c in self.__columns
+                    if isinstance(c.get('name'), string_types)
+                    and arg_lower in c['name'].lower()
+                ]
+                # Default to legacy single-removal: keep only the
+                # shortest-named match unless caller opted in to all.
+                if len(matched) > 1 and not all_matches:
+                    matched = [min(matched, key=lambda c: len(c['name']))]
+
+            if not matched:
+                preview = [{'id': c.get('id'), 'name': c.get('name')}
+                           for c in self.__columns[:10]]
+                extra = len(self.__columns) - len(preview)
+                tail = (" ...and %d more" % extra) if extra > 0 else ""
+                raise ValueError(
+                    "deselect(%r): no matching field in the current selection. "
+                    "Pass either the exact field id or a substring of the "
+                    "selected field name. Currently selected: %s%s"
+                    % (arg, preview, tail)
+                )
+
+            ids_to_remove = {c['id'] for c in matched}
+            self.__queryset['select'] = [
+                d for d in self.__queryset['select']
+                if d['fieldId'] not in ids_to_remove
+            ]
+            self.__columns = [c for c in self.__columns if c['id'] not in ids_to_remove]
+
+            removed = [(c.get('name') or c.get('id'), c.get('id')) for c in matched]
+            if len(removed) == 1:
+                print("-- Deselected '%s' (%s)." % removed[0])
+            else:
+                print("-- Deselected %d fields: %s"
+                      % (len(removed),
+                         ", ".join("'%s' (%s)" % r for r in removed)))
 
     def group_by(self, *args):
         """

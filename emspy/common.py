@@ -62,5 +62,10 @@ uris = {
         'analytic_set_groups': '/v2/ems-systems/%s/analytic-set-groups',  # (emsSystemId),
         'analytic_set_group': '/v2/ems-systems/%s/analytic-set-groups/%s',  # (emsSystemId, groupId)
         'analytic_set': '/v2/ems-systems/%s/analytic-set-groups/%s/analytic-sets/%s',  # (emsSystemId, groupId, analyticSetName)
+    },
+    'fieldset': {
+        'fieldset_groups': '/v2/ems-systems/%s/fieldset-groups',  # (emsSystemId)
+        'fieldset_group': '/v2/ems-systems/%s/fieldset-groups/%s',  # (emsSystemId, groupId)
+        'fieldset': '/v2/ems-systems/%s/fieldset-groups/%s/fieldset/%s',  # (emsSystemId, groupId, fieldsetName)
     }
 }

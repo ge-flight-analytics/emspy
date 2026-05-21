@@ -525,6 +525,192 @@ class MockConnection(Connection):
                 }
 
 
+        elif uri_keys == ('fieldset', 'fieldset_groups'):
+            # Returns a bare list of groups (the parser tolerates either bare
+            # arrays or {'groups': [...]} envelopes).
+            content = [
+                {
+                    "id": "mock-group-id",
+                    "name": "Mock Group",
+                    "description": "Group used by the mocked test suite.",
+                },
+                {
+                    "id": "dup-group-a",
+                    "name": "Dup Group A",
+                    "description": None,
+                },
+                {
+                    "id": "dup-group-b",
+                    "name": "Dup Group B",
+                    "description": None,
+                },
+                {
+                    "id": "empty-group-id",
+                    "name": "Empty Group",
+                    "description": None,
+                },
+                {
+                    "id": "forbidden-group-id",
+                    "name": "Forbidden Group",
+                    "description": "Raises on get_group.",
+                },
+                {
+                    "id": "real-ids-group-id",
+                    "name": "Real IDs Group",
+                    "description": "Fieldsets with entity-type-shaped field IDs.",
+                },
+            ]
+        elif uri_keys == ('fieldset', 'fieldset_group'):
+            _ems_id, group_id = uri_args
+            if group_id == "mock-group-id":
+                content = {
+                    "groups": [
+                        {
+                            "id": "sub-group-id",
+                            "name": "Sub Group",
+                            "description": None,
+                        }
+                    ],
+                    "fieldSets": [
+                        {"id": "Mock Fieldset", "name": "Mock Fieldset",
+                         "description": "schemaItems shape."},
+                        {"id": "Alt Shape Fieldset", "name": "Alt Shape Fieldset",
+                         "description": "fields shape."},
+                    ],
+                }
+            elif group_id == "sub-group-id":
+                content = {
+                    "groups": [],
+                    "fieldSets": [
+                        {"id": "Deep Fieldset", "name": "Deep Fieldset",
+                         "description": "Lives one level down."},
+                    ],
+                }
+            elif group_id == "dup-group-a":
+                content = {
+                    "groups": [],
+                    "fieldSets": [
+                        {"id": "Dup Fieldset", "name": "Dup Fieldset",
+                         "description": "Appears in two groups."},
+                    ],
+                }
+            elif group_id == "dup-group-b":
+                content = {
+                    "groups": [],
+                    "fieldSets": [
+                        {"id": "Dup Fieldset", "name": "Dup Fieldset",
+                         "description": "Appears in two groups."},
+                    ],
+                }
+            elif group_id == "empty-group-id":
+                content = {"groups": [], "fieldSets": []}
+            elif group_id == "forbidden-group-id":
+                # Simulates a permission-gated subgroup; the tree-walk should
+                # catch this and skip silently.
+                raise HTTPError(
+                    "http://mock/forbidden", 403, "Forbidden", {}, None
+                )
+            elif group_id == "real-ids-group-id":
+                content = {
+                    "groups": [],
+                    "fieldSets": [
+                        {"id": "Flights Fieldset", "name": "Flights Fieldset",
+                         "description": "All foqa-flights."},
+                        {"id": "Aircraft Fieldset", "name": "Aircraft Fieldset",
+                         "description": "All aircraft."},
+                        {"id": "Mixed DB Fieldset", "name": "Mixed DB Fieldset",
+                         "description": "Mixes flights and aircraft."},
+                    ],
+                }
+            else:
+                content = {"groups": [], "fieldSets": []}
+        elif uri_keys == ('fieldset', 'fieldset'):
+            _ems_id, group_id, fieldset_name = uri_args
+            if fieldset_name == "Mock Fieldset":
+                # schemaItems shape (moniker / description / type)
+                content = {
+                    "name": "Mock Fieldset",
+                    "schemaItems": [
+                        {"moniker": "field-id-1",
+                         "description": "Takeoff Airport Code",
+                         "type": "string"},
+                        {"moniker": "field-id-2",
+                         "description": "Landing Airport Code",
+                         "type": "string"},
+                        {"moniker": "field-id-3",
+                         "description": "Flight Date",
+                         "type": "dateTime"},
+                    ],
+                }
+            elif fieldset_name == "Alt Shape Fieldset":
+                # Older 'fields' shape with id/name/dataType
+                content = {
+                    "name": "Alt Shape Fieldset",
+                    "fields": [
+                        {"id": "alt-field-1", "name": "Alt One",
+                         "dataType": "number"},
+                        {"id": "alt-field-2", "name": "Alt Two",
+                         "dataType": "boolean"},
+                    ],
+                }
+            elif fieldset_name == "Deep Fieldset":
+                content = {
+                    "name": "Deep Fieldset",
+                    "schemaItems": [
+                        {"moniker": "deep-field-1",
+                         "description": "Deep One",
+                         "type": "number"},
+                    ],
+                }
+            elif fieldset_name == "Dup Fieldset":
+                content = {
+                    "name": "Dup Fieldset",
+                    "schemaItems": [
+                        {"moniker": "dup-field-1",
+                         "description": "Dup One",
+                         "type": "number"},
+                    ],
+                }
+            elif fieldset_name == "Empty Fieldset":
+                content = {"name": "Empty Fieldset", "schemaItems": []}
+            elif fieldset_name == "Flights Fieldset":
+                content = {
+                    "name": "Flights Fieldset",
+                    "schemaItems": [
+                        {"moniker": "[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.exact-date]]]",
+                         "description": "Flight Date",
+                         "type": "dateTime"},
+                        {"moniker": "[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.exist-takeoff]]]",
+                         "description": "Takeoff Valid",
+                         "type": "boolean"},
+                    ],
+                }
+            elif fieldset_name == "Aircraft Fieldset":
+                content = {
+                    "name": "Aircraft Fieldset",
+                    "schemaItems": [
+                        {"moniker": "[-hub-][field][[[ems-aux][entity-type][aircraft]][[ems-aux][base-field][aircraft.serial-number]]]",
+                         "description": "Serial Number",
+                         "type": "string"},
+                    ],
+                }
+            elif fieldset_name == "Mixed DB Fieldset":
+                content = {
+                    "name": "Mixed DB Fieldset",
+                    "schemaItems": [
+                        {"moniker": "[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.exact-date]]]",
+                         "description": "Flight Date",
+                         "type": "dateTime"},
+                        {"moniker": "[-hub-][field][[[ems-aux][entity-type][aircraft]][[ems-aux][base-field][aircraft.serial-number]]]",
+                         "description": "Serial Number",
+                         "type": "string"},
+                    ],
+                }
+            else:
+                raise HTTPError(
+                    "http://mock/fieldset", 404, "Not Found", {}, None
+                )
+
         return RESPONSE_HEADERS, content
 
 

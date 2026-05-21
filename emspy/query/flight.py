@@ -194,6 +194,13 @@ class Flight(object):
         tree = self._trees['dbtree']
         return tree[(tree.nodetype == "database") & (tree.id == self._db_id)].iloc[0].to_dict()
 
+    def get_db_id(self):
+        """
+        Return the currently selected database id, or None if no database
+        has been selected yet.
+        """
+        return self._db_id
+
     def __db_request(self, parent):
         body = None
         if parent['nodetype'] == "database_group":

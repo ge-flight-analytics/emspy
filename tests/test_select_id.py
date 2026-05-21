@@ -119,7 +119,12 @@ def test_deselect_after_select_id_cached():
 
 
 def test_deselect_after_select_id_api():
-    """deselect removes a field added via select_id's API fallback path."""
+    """deselect removes a field added via select_id's API fallback path.
+
+    The fieldtree is left empty - deselect must match against the current
+    selection directly (by name in this case), without consulting the
+    fieldtree.
+    """
     connection = MockConnection(user='', pwd='')
     query = MockFltQuery(connection, 'ems24-app',
                          data_file=os.path.join(test_path, 'mock_metadata.db'))
@@ -130,11 +135,18 @@ def test_deselect_after_select_id_api():
     qs = query.in_dict()
     assert len(qs['select']) == 1
 
-    # Now populate the fieldtree so deselect can find the field by name
-    query.update_fieldtree(
-        'Flight Information',
-        exclude_tree=['Processing', 'Date Times', 'FlightPulse']
-    )
     query.deselect('Flight Record')
+    qs = query.in_dict()
+    assert len(qs['select']) == 0
+
+
+def test_deselect_by_exact_field_id():
+    """deselect accepts the exact field id, no name lookup needed."""
+    connection = MockConnection(user='', pwd='')
+    query = MockFltQuery(connection, 'ems24-app',
+                         data_file=os.path.join(test_path, 'mock_metadata.db'))
+    query.set_database('FDW Flights')
+    query.select_id(FLIGHT_RECORD_ID)
+    query.deselect(FLIGHT_RECORD_ID)
     qs = query.in_dict()
     assert len(qs['select']) == 0

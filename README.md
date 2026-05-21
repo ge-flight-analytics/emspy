@@ -195,6 +195,79 @@ query.select_id(
 `select_id(...)` can be freely mixed with `select(...)` in the same query. If a field id is already present in the local metadata tree it is resolved from cache; otherwise it is looked up via the EMS API and cached for future use.
 
 
+### Selecting a fieldset
+
+A **fieldset** is a server-curated bundle of fields. `select_fieldset(...)`
+fetches a fieldset and expands it into the query as normal `{fieldId,
+aggregate}` select entries. The query endpoint does not receive a fieldset
+reference; it receives the individual field IDs.
+
+Fieldset selection can be mixed with `select(...)` and `select_id(...)` in the
+same query:
+
+```python
+query.select("Flight Record")
+query.select_id(
+    "[-hub-][field][[[ems-core][entity-type][foqa-flights]][[ems-core][base-field][flight.uid]]]"
+)
+query.select_fieldset("Standard Flight Metrics", group="<group-id>")
+```
+
+If you know the fieldset group ID, pass it with `group=...`. This is the
+fastest and most predictable form because it avoids walking the full
+fieldset-group tree:
+
+```python
+query.select_fieldset("Standard Flight Metrics", group="<group-id>")
+```
+
+If you do not know the group ID, you can pass only the fieldset name. emsPy
+will search visible fieldset groups and require a single match:
+
+```python
+query.select_fieldset("Standard Flight Metrics")
+```
+
+This raises `ValueError` if no visible fieldset has that name, or if the name
+appears in more than one group. In that case, find the fieldset and pass
+`group=` explicitly.
+
+Use `Fieldset` directly when you want to inspect available groups or preview
+the field list before adding it to a query:
+
+```python
+from emspy.query import Fieldset
+
+fieldsets = Fieldset(conn, query.get_ems_id())
+
+groups = fieldsets.get_groups()
+contents = fieldsets.get_group("<group-id>")
+matches = fieldsets.find("Standard Flight Metrics")
+
+fs = fieldsets.get_fieldset("<group-id>", "Standard Flight Metrics")
+print(fs["fields"])  # DataFrame with id, name, and type columns
+
+query.select_fieldset(fs)
+```
+
+`select_fieldset(...)` does not accept an `aggregate` keyword - every field is
+added with `aggregate='none'`. If you need to aggregate, add the relevant
+fields individually via `select(...)` or `select_id(...)` with the appropriate
+per-field aggregation. (Applying one aggregation uniformly across a curated
+fieldset is rarely sensible, and some aggregations - e.g. `stdev` on datetime
+fields - are not processed correctly by the API.)
+
+Fieldsets are cached in memory for the life of the `Fieldset` object. Use
+`clear_cache()` if you need to force fresh API results:
+
+```python
+fieldsets.clear_cache()
+```
+
+When a query already has a selected database, emsPy checks shaped field IDs in
+the fieldset against that database and raises `ValueError` if the fieldset
+targets a different database or mixes fields from multiple databases.
+
 ### Group by & Order by
 Similarly, you can pass the grouping and ordering condition:
 
